@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ポコチャメーター S帯アラート版</title>
+<title>ポコチャメーター S帯アプリ版</title>
 <style>
 :root{
   --main:#ff6b4a;
@@ -181,10 +181,18 @@ canvas{width:100%;max-height:220px}
 .alert-score{font-size:14px;font-weight:900}
 
 </style>
+
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#ff6b4a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ポコチャメーター">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="./icon-192.png">
+
 </head>
 <body>
 <header>
-  <h1>ポコチャメーター S帯アラート版</h1>
+  <h1>ポコチャメーター S帯アプリ版</h1>
   <div class="subtitle">全国共有・平均集計・コアボーナス・馬車/花火換算</div>
 </header>
 
@@ -1281,5 +1289,16 @@ showCoreBonus();
 checkFirebaseConnection();
 autoApplyOnStartup();
 </script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js")
+      .then(() => console.log("PWA ready"))
+      .catch(err => console.log("PWA registration failed", err));
+  });
+}
+</script>
+
 </body>
 </html>

@@ -1,0 +1,22 @@
+{
+  "name": "ポコチャメーター S帯アプリ版",
+  "short_name": "ポコチャメーター",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f5f5",
+  "theme_color": "#ff6b4a",
+  "description": "S帯ライバー向けメーター計算・全国共有ボーダー分析ツール",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
