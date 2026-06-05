@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ポコチャメーター S帯アプリ版</title>
+<title>ポコチャメーター 全国共有ボーダー版</title>
 <style>
 :root{
   --main:#ff6b4a;
@@ -180,6 +180,14 @@ canvas{width:100%;max-height:220px}
 .alert-rank-title{font-size:18px;font-weight:900;margin-bottom:6px}
 .alert-score{font-size:14px;font-weight:900}
 
+
+.share-board{background:#f7fbff;border:1px solid #d8e8ff;border-radius:14px;padding:12px;margin-top:10px}
+.share-board-title{font-size:18px;font-weight:900;margin-bottom:8px}
+.share-board-card{background:#fff;border:1px solid #e8e8e8;border-radius:14px;padding:10px;margin:8px 0}
+.share-board-rank{font-size:20px;font-weight:900;color:var(--blue)}
+.share-board-mini{font-size:13px;color:var(--muted);line-height:1.6}
+.share-board-empty{background:#fafafa;border:1px dashed #ddd;border-radius:12px;padding:10px;color:var(--muted)}
+
 </style>
 
 <link rel="manifest" href="./manifest.json">
@@ -192,7 +200,7 @@ canvas{width:100%;max-height:220px}
 </head>
 <body>
 <header>
-  <h1>ポコチャメーター S帯アプリ版</h1>
+  <h1>ポコチャメーター 全国共有ボーダー版</h1>
   <div class="subtitle">全国共有・平均集計・コアボーナス・馬車/花火換算</div>
 </header>
 
@@ -264,6 +272,7 @@ canvas{width:100%;max-height:220px}
     <button class="blue" onclick="loadAverageTrendGraph()">全国平均グラフを見る</button>
     <button class="blue" onclick="predictTomorrowBorder()">明日のAI予測を見る</button>
     <button class="blue" onclick="loadRiseAlert()">急上昇アラートを見る</button>
+    <button class="blue" onclick="loadSharedBoard()">全国共有ボーダー掲示板</button>
 
     <div id="sharedStatus" class="result"></div>
     <div id="sharedAverageArea" class="result"></div>
@@ -272,6 +281,7 @@ canvas{width:100%;max-height:220px}
     <div id="sharedTrendArea" class="result"></div>
     <div id="predictionArea" class="result"></div>
     <div id="riseAlertArea" class="result"></div>
+    <div id="sharedBoardArea" class="result"></div>
 
     <button class="blue" onclick="loadTodayAllRankAverages()">S1〜S6 今日の平均一覧</button>
     <button class="light" onclick="loadRecentAllRankAverages()">S1〜S6 直近7日平均一覧</button>
@@ -1263,6 +1273,80 @@ async function loadRiseAlert(){
   }catch(e){
     console.error(e);
     area.innerHTML = "急上昇アラートの取得に失敗しました。Firestoreのルールやインデックスを確認してください。";
+  }
+}
+
+
+function getSharedBoardDate(mode){
+  const base = document.getElementById("borderDate").value || todayISO();
+  if(mode === "today") return base;
+  if(mode === "yesterday") return dateOffsetISO(base, -1);
+  return base;
+}
+
+async function getSharedBoardRows(mode, rank){
+  if(mode === "recent7"){
+    return await getRowsRecentByRank(rank, 7);
+  }
+  const date = getSharedBoardDate(mode);
+  return await getRowsByDateAndRank(date, rank);
+}
+
+function sharedBoardCard(rank, avg, mode){
+  if(!avg){
+    return `<div class="share-board-card">
+      <div class="share-board-rank">${rank}</div>
+      <div class="share-board-empty">投稿データなし</div>
+    </div>`;
+  }
+
+  return `<div class="share-board-card">
+    <div class="share-board-rank">${rank}</div>
+    <div class="share-board-mini">
+      投稿数：${avg.count}件<br>
+      ±0：<strong>${yen(avg.zero)}</strong><br>
+      +1：<strong>${yen(avg.plus1)}</strong><br>
+      +2：<strong>${yen(avg.plus2)}</strong>
+    </div>
+    <button class="dark" onclick="applySharedAverage(${avg.zero},${avg.plus1},${avg.plus2})">この平均を計算に反映</button>
+  </div>`;
+}
+
+async function loadSharedBoard(){
+  const area = document.getElementById("sharedBoardArea");
+  if(!await checkFirebaseConnection()){
+    area.innerHTML = "Firebaseに接続できません。";
+    return;
+  }
+
+  const mode = prompt("表示したい種類を入力してください：today / yesterday / recent7", "today") || "today";
+  const safeMode = ["today","yesterday","recent7"].includes(mode) ? mode : "today";
+  const ranks = ["S1","S2","S3","S4","S5","S6"];
+
+  const label = safeMode === "today" ? "今日" : safeMode === "yesterday" ? "昨日" : "直近7日";
+  const dateLabel = safeMode === "recent7" ? "直近7日" : getSharedBoardDate(safeMode);
+
+  area.innerHTML = "全国共有ボーダー掲示板を読み込み中...";
+
+  try{
+    let totalPosts = 0;
+    let html = `<div class="share-board">
+      <div class="share-board-title">🌐 全国共有ボーダー掲示板</div>
+      表示：${label}（${dateLabel}）<br>
+      <small>S1〜S6の共有投稿から平均を自動集計します。</small>`;
+
+    for(const rank of ranks){
+      const rows = await getSharedBoardRows(safeMode, rank);
+      const avg = averageRows(rows);
+      if(avg) totalPosts += avg.count;
+      html += sharedBoardCard(rank, avg, safeMode);
+    }
+
+    html += `<br><strong>総投稿数：${totalPosts}件</strong></div>`;
+    area.innerHTML = html;
+  }catch(e){
+    console.error(e);
+    area.innerHTML = "全国共有ボーダー掲示板の取得に失敗しました。Firestoreのルールやインデックスを確認してください。";
   }
 }
 
