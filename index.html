@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ポコチャメーター S帯スマホ版</title>
+<title>ポコチャメーター S帯本格共有版</title>
 <style>
 :root{
   --main:#ff6b4a;
@@ -152,12 +152,20 @@ td:first-child,th:first-child{text-align:left}
 .item-row span{flex:1;font-size:14px}.item-row button{width:auto;margin:0;padding:8px 10px;font-size:12px;background:#999}
 canvas{width:100%;max-height:220px}
 .copybox{white-space:pre-wrap;background:#fafafa;border-radius:12px;padding:10px;font-size:13px}
+
+.rank-grid{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
+.rank-card{background:#fafafa;border:1px solid #eee;border-radius:14px;padding:10px}
+.rank-card strong{font-size:16px}
+.rank-mini{font-size:13px;color:var(--muted);line-height:1.6;margin-top:4px}
+.status-pill{display:inline-block;border-radius:999px;padding:5px 10px;background:#eee;font-size:12px;font-weight:900;margin:4px 0}
+.status-pill.ok{background:#eafff1;color:var(--ok)}
+.status-pill.bad{background:#ffe9e7;color:var(--bad)}
 </style>
 </head>
 <body>
 <header>
-  <h1>ポコチャメーター S帯スマホ版</h1>
-  <div class="subtitle">クイック入力・コアボーナス・馬車/花火換算・ボーダー履歴</div>
+  <h1>ポコチャメーター S帯本格共有版</h1>
+  <div class="subtitle">全国共有・平均集計・コアボーナス・馬車/花火換算</div>
 </header>
 
 <main>
@@ -203,6 +211,7 @@ canvas{width:100%;max-height:220px}
     <label>自分の最終pt 任意</label>
     <input id="myFinalPoint" type="number" inputmode="numeric">
     <button onclick="saveBorderHistory()">保存</button>
+    <button class="blue" onclick="saveAndSubmitSharedBorder()">保存して全国共有にも投稿</button>
     <button class="blue" onclick="predictBorders()">直近平均を計算</button>
     <button class="dark" onclick="applyPredictedBorders()">平均ボーダーを反映</button>
     <button class="light" onclick="downloadBorderCSV()">CSV出力</button>
@@ -226,6 +235,13 @@ canvas{width:100%;max-height:220px}
 
     <div id="sharedStatus" class="result"></div>
     <div id="sharedAverageArea" class="result"></div>
+
+    <button class="blue" onclick="loadTodayAllRankAverages()">S1〜S6 今日の平均一覧</button>
+    <button class="light" onclick="loadRecentAllRankAverages()">S1〜S6 直近7日平均一覧</button>
+
+    <div id="firebaseStatus" class="result"></div>
+    <div id="nationalDashboardArea" class="result"></div>
+
 
     <div id="borderAnalysis" class="result"></div>
     <canvas id="borderChart" width="520" height="220"></canvas>
@@ -742,6 +758,7 @@ renderCoreRules();
 renderBorderHistory();
 predictBorders();
 showCoreBonus();
+checkFirebaseConnection();
 </script>
 </body>
 </html>
