@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ポコチャメーター 全国共有ボーダー版</title>
+<title>ポコチャメーター AI予測センター版</title>
 <style>
 :root{
   --main:#ff6b4a;
@@ -188,6 +188,17 @@ canvas{width:100%;max-height:220px}
 .share-board-mini{font-size:13px;color:var(--muted);line-height:1.6}
 .share-board-empty{background:#fafafa;border:1px dashed #ddd;border-radius:12px;padding:10px;color:var(--muted)}
 
+
+.ai-center{background:#f7f4ff;border:1px solid #ddd2ff;border-radius:14px;padding:12px;margin-top:10px}
+.ai-center-title{font-size:18px;font-weight:900;margin-bottom:8px}
+.ai-card{background:#fff;border:1px solid #eee;border-radius:14px;padding:10px;margin:8px 0}
+.ai-rank{font-size:20px;font-weight:900;color:#6b4aff}
+.ai-main{font-size:15px;line-height:1.7}
+.ai-confidence{display:inline-block;border-radius:999px;padding:4px 9px;background:#eee;font-size:12px;font-weight:900;margin-top:4px}
+.ai-confidence.high{background:#eafff1;color:var(--ok)}
+.ai-confidence.mid{background:#fff5df;color:#a86600}
+.ai-confidence.low{background:#ffe9e7;color:var(--bad)}
+
 </style>
 
 <link rel="manifest" href="./manifest.json">
@@ -200,7 +211,7 @@ canvas{width:100%;max-height:220px}
 </head>
 <body>
 <header>
-  <h1>ポコチャメーター 全国共有ボーダー版</h1>
+  <h1>ポコチャメーター AI予測センター版</h1>
   <div class="subtitle">全国共有・平均集計・コアボーナス・馬車/花火換算</div>
 </header>
 
@@ -273,6 +284,7 @@ canvas{width:100%;max-height:220px}
     <button class="blue" onclick="predictTomorrowBorder()">明日のAI予測を見る</button>
     <button class="blue" onclick="loadRiseAlert()">急上昇アラートを見る</button>
     <button class="blue" onclick="loadSharedBoard()">全国共有ボーダー掲示板</button>
+    <button class="blue" onclick="loadAiPredictionCenter()">AI予測センター</button>
 
     <div id="sharedStatus" class="result"></div>
     <div id="sharedAverageArea" class="result"></div>
@@ -282,6 +294,7 @@ canvas{width:100%;max-height:220px}
     <div id="predictionArea" class="result"></div>
     <div id="riseAlertArea" class="result"></div>
     <div id="sharedBoardArea" class="result"></div>
+    <div id="aiPredictionCenterArea" class="result"></div>
 
     <button class="blue" onclick="loadTodayAllRankAverages()">S1〜S6 今日の平均一覧</button>
     <button class="light" onclick="loadRecentAllRankAverages()">S1〜S6 直近7日平均一覧</button>
@@ -1347,6 +1360,151 @@ async function loadSharedBoard(){
   }catch(e){
     console.error(e);
     area.innerHTML = "全国共有ボーダー掲示板の取得に失敗しました。Firestoreのルールやインデックスを確認してください。";
+  }
+}
+
+
+function aiConfidenceClass(conf){
+  if(conf === "高め") return "high";
+  if(conf === "ふつう") return "mid";
+  return "low";
+}
+
+function aiTrendLabel(values){
+  const nums = values.filter(v => v > 0);
+  if(nums.length < 2) return "データ不足";
+  const last = nums[nums.length - 1];
+  const prev = nums[nums.length - 2];
+  const diff = last - prev;
+  if(diff >= 150000) return "🚨 急上昇傾向";
+  if(diff >= 50000) return "⚠️ 上昇傾向";
+  if(diff <= -50000) return "📉 緩和傾向";
+  return "➡️ 横ばい傾向";
+}
+
+function aiAdviceByTrend(trend){
+  if(trend.includes("急上昇")) return "ラス枠前に+1/+2目標を高めに見ておくのがおすすめです。";
+  if(trend.includes("上昇")) return "昨日より強めの可能性があります。必要時速を早めに確認しましょう。";
+  if(trend.includes("緩和")) return "やや緩めの可能性があります。無理しすぎず目標調整に使えます。";
+  if(trend.includes("横ばい")) return "通常ペースに近いです。現在ptと残り時間を見ながら判断しましょう。";
+  return "共有データが増えるほど予測精度が上がります。";
+}
+
+async function makeAiPredictionForRank(rank){
+  const days = [];
+  for(let i=6;i>=0;i--){
+    days.push(getDateNDaysAgo(i));
+  }
+
+  const zeroValues = [];
+  const plus1Values = [];
+  const plus2Values = [];
+  const counts = [];
+
+  for(const day of days){
+    const rows = await getRowsByDateAndRank(day, rank);
+    const avg = averageRows(rows);
+    if(avg){
+      zeroValues.push(avg.zero);
+      plus1Values.push(avg.plus1);
+      plus2Values.push(avg.plus2);
+      counts.push(avg.count);
+    }else{
+      zeroValues.push(0);
+      plus1Values.push(0);
+      plus2Values.push(0);
+      counts.push(0);
+    }
+  }
+
+  const predZero = weightedPrediction(zeroValues);
+  const predPlus1 = weightedPrediction(plus1Values);
+  const predPlus2 = weightedPrediction(plus2Values);
+  const conf = predictionConfidence(counts);
+  const trend = aiTrendLabel(plus2Values);
+  const totalPosts = counts.reduce((a,b)=>a+b,0);
+
+  if(predZero === 0 || predPlus1 === 0 || predPlus2 === 0){
+    return {rank, ok:false, conf, trend, totalPosts};
+  }
+
+  return {
+    rank,
+    ok:true,
+    zero:predZero,
+    plus1:predPlus1,
+    plus2:predPlus2,
+    conf,
+    trend,
+    totalPosts,
+    advice:aiAdviceByTrend(trend)
+  };
+}
+
+function aiPredictionCard(p){
+  if(!p.ok){
+    return `<div class="ai-card">
+      <div class="ai-rank">${p.rank}</div>
+      <div class="ai-main">予測に必要なデータがまだ足りません。<br>直近7日投稿：${p.totalPosts}件</div>
+    </div>`;
+  }
+
+  return `<div class="ai-card">
+    <div class="ai-rank">${p.rank}</div>
+    <div class="ai-main">
+      予測：±0 <strong>${yen(p.zero)}</strong> / +1 <strong>${yen(p.plus1)}</strong> / +2 <strong>${yen(p.plus2)}</strong><br>
+      傾向：${p.trend}<br>
+      直近7日投稿：${p.totalPosts}件<br>
+      <span class="ai-confidence ${aiConfidenceClass(p.conf)}">信頼度：${p.conf}</span><br>
+      ${p.advice}
+    </div>
+    <button class="dark" onclick="applySharedAverage(${p.zero},${p.plus1},${p.plus2})">この予測を計算に反映</button>
+  </div>`;
+}
+
+async function loadAiPredictionCenter(){
+  const area = document.getElementById("aiPredictionCenterArea");
+
+  if(!await checkFirebaseConnection()){
+    area.innerHTML = "Firebaseに接続できません。";
+    return;
+  }
+
+  area.innerHTML = "AI予測センターを読み込み中...";
+
+  try{
+    const ranks = ["S1","S2","S3","S4","S5","S6"];
+    const tomorrow = dateOffsetISO(todayISO(), 1);
+    const predictions = [];
+
+    for(const rank of ranks){
+      predictions.push(await makeAiPredictionForRank(rank));
+    }
+
+    let html = `<div class="ai-center">
+      <div class="ai-center-title">🤖 AI予測センター</div>
+      対象：${tomorrow} の予測<br>
+      <small>直近7日の全国共有データから、直近重視の加重平均＋増減傾向で予測します。</small>`;
+
+    predictions.forEach(p=>{
+      html += aiPredictionCard(p);
+    });
+
+    const valid = predictions.filter(p=>p.ok);
+    if(valid.length){
+      const hottest = valid.slice().sort((a,b)=>b.plus2-a.plus2)[0];
+      const risings = valid.filter(p=>p.trend.includes("急上昇") || p.trend.includes("上昇")).map(p=>p.rank).join(" / ") || "なし";
+
+      html += `<br><strong>AIまとめ</strong><br>
+        +2予測が高いランク：${hottest.rank}（${yen(hottest.plus2)}）<br>
+        上昇傾向ランク：${risings}<br>`;
+    }
+
+    html += `<div class="prediction-note">※予測は参考値です。ポコチャ公式値ではありません。共有投稿が増えるほど精度が上がります。</div></div>`;
+    area.innerHTML = html;
+  }catch(e){
+    console.error(e);
+    area.innerHTML = "AI予測センターの取得に失敗しました。Firestoreのルールやインデックスを確認してください。";
   }
 }
 
