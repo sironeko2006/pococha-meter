@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ポコチャメーター AI予測センター版</title>
+<title>ポコチャメーター ボーダーグラフ版</title>
 <style>
 :root{
   --main:#ff6b4a;
@@ -199,6 +199,10 @@ canvas{width:100%;max-height:220px}
 .ai-confidence.mid{background:#fff5df;color:#a86600}
 .ai-confidence.low{background:#ffe9e7;color:var(--bad)}
 
+
+.border-graph-center{background:#f7fbff;border:1px solid #d8e8ff;border-radius:14px;padding:12px;margin-top:10px}
+.border-graph-title{font-size:18px;font-weight:900;margin-bottom:8px}
+.graph-summary{font-size:13px;color:var(--muted);line-height:1.6;margin-top:8px}
 </style>
 
 <link rel="manifest" href="./manifest.json">
@@ -211,7 +215,7 @@ canvas{width:100%;max-height:220px}
 </head>
 <body>
 <header>
-  <h1>ポコチャメーター AI予測センター版</h1>
+  <h1>ポコチャメーター ボーダーグラフ版</h1>
   <div class="subtitle">全国共有・平均集計・コアボーナス・馬車/花火換算</div>
 </header>
 
@@ -285,6 +289,7 @@ canvas{width:100%;max-height:220px}
     <button class="blue" onclick="loadRiseAlert()">急上昇アラートを見る</button>
     <button class="blue" onclick="loadSharedBoard()">全国共有ボーダー掲示板</button>
     <button class="blue" onclick="loadAiPredictionCenter()">AI予測センター</button>
+    <button class="blue" onclick="loadBorderTrendCenter()">ボーダー推移グラフ</button>
 
     <div id="sharedStatus" class="result"></div>
     <div id="sharedAverageArea" class="result"></div>
@@ -295,6 +300,7 @@ canvas{width:100%;max-height:220px}
     <div id="riseAlertArea" class="result"></div>
     <div id="sharedBoardArea" class="result"></div>
     <div id="aiPredictionCenterArea" class="result"></div>
+    <div id="borderTrendCenterArea" class="result"></div>
 
     <button class="blue" onclick="loadTodayAllRankAverages()">S1〜S6 今日の平均一覧</button>
     <button class="light" onclick="loadRecentAllRankAverages()">S1〜S6 直近7日平均一覧</button>
@@ -1505,6 +1511,196 @@ async function loadAiPredictionCenter(){
   }catch(e){
     console.error(e);
     area.innerHTML = "AI予測センターの取得に失敗しました。Firestoreのルールやインデックスを確認してください。";
+  }
+}
+
+
+function drawBorderTrendCanvas(canvasId, days, zeroValues, plus1Values, plus2Values){
+  const canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  const all = [...zeroValues, ...plus1Values, ...plus2Values].filter(v => v > 0);
+  if(all.length < 2){
+    ctx.fillText("2日以上の共有データでグラフ表示できます", 20, 40);
+    return;
+  }
+
+  const pad = 38;
+  const max = Math.max(...all);
+  const min = 0;
+  const x = i => pad + i * ((canvas.width - pad*2) / Math.max(1, days.length - 1));
+  const y = v => canvas.height - pad - ((v - min) / (max - min || 1)) * (canvas.height - pad*2);
+
+  ctx.beginPath();
+  ctx.moveTo(pad, pad);
+  ctx.lineTo(pad, canvas.height - pad);
+  ctx.lineTo(canvas.width - pad, canvas.height - pad);
+  ctx.stroke();
+
+  function drawLine(values, label, offset){
+    ctx.beginPath();
+    let started = false;
+    values.forEach((v,i)=>{
+      if(v <= 0) return;
+      if(!started){
+        ctx.moveTo(x(i), y(v));
+        started = true;
+      }else{
+        ctx.lineTo(x(i), y(v));
+      }
+    });
+    ctx.stroke();
+
+    let lastIndex = -1;
+    values.forEach((v,i)=>{ if(v>0) lastIndex=i; });
+    if(lastIndex >= 0){
+      ctx.fillText(label, x(lastIndex)-10, y(values[lastIndex]) + offset);
+    }
+  }
+
+  drawLine(zeroValues, "±0", 12);
+  drawLine(plus1Values, "+1", 0);
+  drawLine(plus2Values, "+2", -10);
+
+  days.forEach((d,i)=>{
+    const label = d.slice(5).replace("-", "/");
+    ctx.fillText(label, x(i)-14, canvas.height-10);
+  });
+}
+
+function trendText(values){
+  const nums = values.filter(v=>v>0);
+  if(nums.length < 2) return "データ不足";
+  const diff = nums[nums.length-1] - nums[0];
+  if(diff >= 150000) return "大きく上昇傾向";
+  if(diff >= 50000) return "上昇傾向";
+  if(diff <= -50000) return "下降/緩和傾向";
+  return "横ばい傾向";
+}
+
+async function loadBorderTrendCenter(){
+  const area = document.getElementById("borderTrendCenterArea");
+
+  if(!await checkFirebaseConnection()){
+    area.innerHTML = "Firebaseに接続できません。";
+    return;
+  }
+
+  area.innerHTML = "ボーダー推移グラフを読み込み中...";
+
+  try{
+    const selectedRank = document.getElementById("sharedRank")?.value || "S1";
+    const days = [];
+    for(let i=6;i>=0;i--){
+      days.push(getDateNDaysAgo(i));
+    }
+
+    const rowsByDay = [];
+    const zeroValues = [];
+    const plus1Values = [];
+    const plus2Values = [];
+
+    for(const day of days){
+      const rows = await getRowsByDateAndRank(day, selectedRank);
+      const avg = averageRows(rows);
+      if(avg){
+        zeroValues.push(avg.zero);
+        plus1Values.push(avg.plus1);
+        plus2Values.push(avg.plus2);
+        rowsByDay.push({day, count:avg.count, zero:avg.zero, plus1:avg.plus1, plus2:avg.plus2});
+      }else{
+        zeroValues.push(0);
+        plus1Values.push(0);
+        plus2Values.push(0);
+        rowsByDay.push({day, count:0, zero:0, plus1:0, plus2:0});
+      }
+    }
+
+    const canvasId = "borderTrendMainCanvas";
+    let html = `<div class="border-graph-center">
+      <div class="border-graph-title">📈 ${selectedRank} ボーダー推移グラフ</div>
+      <small>直近7日の全国共有平均をグラフ表示します。線は ±0 / +1 / +2 です。</small>
+      <canvas id="${canvasId}" width="520" height="260"></canvas>
+      <div class="graph-summary">
+        +2傾向：<strong>${trendText(plus2Values)}</strong><br>
+        +1傾向：<strong>${trendText(plus1Values)}</strong><br>
+        ±0傾向：<strong>${trendText(zeroValues)}</strong>
+      </div>
+      <br><table><tr><th>日付</th><th>件数</th><th>±0</th><th>+1</th><th>+2</th></tr>`;
+
+    rowsByDay.forEach(r=>{
+      html += `<tr><td>${r.day.slice(5).replace("-", "/")}</td><td>${r.count}</td><td>${r.zero?yen(r.zero):"-"}</td><td>${r.plus1?yen(r.plus1):"-"}</td><td>${r.plus2?yen(r.plus2):"-"}</td></tr>`;
+    });
+
+    html += `</table>
+      <button class="dark" onclick="loadAllRankBorderGraphs()">S1〜S6をまとめて見る</button>
+    </div>`;
+
+    area.innerHTML = html;
+    drawBorderTrendCanvas(canvasId, days, zeroValues, plus1Values, plus2Values);
+  }catch(e){
+    console.error(e);
+    area.innerHTML = "ボーダー推移グラフの取得に失敗しました。Firestoreのルールやインデックスを確認してください。";
+  }
+}
+
+async function loadAllRankBorderGraphs(){
+  const area = document.getElementById("borderTrendCenterArea");
+
+  if(!await checkFirebaseConnection()){
+    area.innerHTML = "Firebaseに接続できません。";
+    return;
+  }
+
+  area.innerHTML = "S1〜S6グラフを読み込み中...";
+
+  try{
+    const ranks = ["S1","S2","S3","S4","S5","S6"];
+    const days = [];
+    for(let i=6;i>=0;i--){
+      days.push(getDateNDaysAgo(i));
+    }
+
+    let html = `<div class="border-graph-center">
+      <div class="border-graph-title">📈 S1〜S6 ボーダー推移まとめ</div>
+      <small>各ランクの+2平均推移を簡易表示します。</small>`;
+
+    const chartData = [];
+
+    for(const rank of ranks){
+      const plus2Values = [];
+      let totalPosts = 0;
+
+      for(const day of days){
+        const rows = await getRowsByDateAndRank(day, rank);
+        const avg = averageRows(rows);
+        if(avg){
+          plus2Values.push(avg.plus2);
+          totalPosts += avg.count;
+        }else{
+          plus2Values.push(0);
+        }
+      }
+
+      chartData.push({rank, plus2Values, totalPosts});
+      html += `<div class="share-board-card">
+        <div class="share-board-rank">${rank}</div>
+        <canvas id="miniGraph_${rank}" width="520" height="160"></canvas>
+        <div class="share-board-mini">直近7日投稿数：${totalPosts}件 / +2傾向：${trendText(plus2Values)}</div>
+      </div>`;
+    }
+
+    html += `</div>`;
+    area.innerHTML = html;
+
+    chartData.forEach(item=>{
+      drawBorderTrendCanvas(`miniGraph_${item.rank}`, days, [], [], item.plus2Values);
+    });
+  }catch(e){
+    console.error(e);
+    area.innerHTML = "S1〜S6グラフの取得に失敗しました。Firestoreのルールやインデックスを確認してください。";
   }
 }
 
