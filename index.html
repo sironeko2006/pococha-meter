@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ポコチャメーター ボーダーグラフ版</title>
+<title>ポコチャメーター 直近10日統一版</title>
 <style>
 :root{
   --main:#ff6b4a;
@@ -215,8 +215,8 @@ canvas{width:100%;max-height:220px}
 </head>
 <body>
 <header>
-  <h1>ポコチャメーター ボーダーグラフ版</h1>
-  <div class="subtitle">全国共有・平均集計・コアボーナス・馬車/花火換算</div>
+  <h1>ポコチャメーター 直近10日統一版</h1>
+  <div class="subtitle">直近10日ベースで集計 / 全国共有・平均集計・コアボーナス・馬車/花火換算</div>
 </header>
 
 <main>
@@ -282,7 +282,7 @@ canvas{width:100%;max-height:220px}
 
     <button class="blue" onclick="submitSharedBorder()">全国共有に投稿</button>
     <button class="dark" onclick="loadSharedAverages()">今日の全国平均を表示</button>
-    <button class="light" onclick="loadRecentSharedAverages()">直近7日平均を表示</button>
+    <button class="light" onclick="loadRecentSharedAverages()">直近10日平均を表示</button>
     <button class="blue" onclick="loadYesterdayComparison()">昨日との差を見る</button>
     <button class="blue" onclick="loadAverageTrendGraph()">全国平均グラフを見る</button>
     <button class="blue" onclick="predictTomorrowBorder()">明日のAI予測を見る</button>
@@ -303,7 +303,7 @@ canvas{width:100%;max-height:220px}
     <div id="borderTrendCenterArea" class="result"></div>
 
     <button class="blue" onclick="loadTodayAllRankAverages()">S1〜S6 今日の平均一覧</button>
-    <button class="light" onclick="loadRecentAllRankAverages()">S1〜S6 直近7日平均一覧</button>
+    <button class="light" onclick="loadRecentAllRankAverages()">S1〜S6 直近10日平均一覧</button>
 
     <div id="firebaseStatus" class="result"></div>
     <div id="nationalDashboardArea" class="result"></div>
@@ -788,7 +788,7 @@ function getDateNDaysAgo(n){
 async function loadRecentSharedAverages(){
   const area = document.getElementById("sharedAverageArea");
   const rank = document.getElementById("sharedRank").value || "S1";
-  const fromDate = getDateNDaysAgo(6);
+  const fromDate = getDateNDaysAgo(9);
 
   if(!initFirebase()){
     area.innerHTML = "Firebase接続に失敗しました。";
@@ -805,11 +805,11 @@ async function loadRecentSharedAverages(){
     const avg = averageRows(rows);
 
     if(!avg){
-      area.innerHTML = `<br><strong>${rank} 直近7日平均</strong><br>まだ投稿がありません。`;
+      area.innerHTML = `<br><strong>${rank} 直近10日平均</strong><br>まだ投稿がありません。`;
       return;
     }
 
-    area.innerHTML = `<br><strong>${rank} 直近7日平均</strong><br>
+    area.innerHTML = `<br><strong>${rank} 直近10日平均</strong><br>
       投稿数：${avg.count}件<br>
       ±0：${yen(avg.zero)}<br>
       +1：${yen(avg.plus1)}<br>
@@ -817,7 +817,7 @@ async function loadRecentSharedAverages(){
       <button class="dark" onclick="applySharedAverage(${avg.zero},${avg.plus1},${avg.plus2})">この平均を計算に反映</button>`;
   }catch(e){
     console.error(e);
-    area.innerHTML = "直近7日平均の取得に失敗しました。Firestoreのルールやインデックスを確認してください。";
+    area.innerHTML = "直近10日平均の取得に失敗しました。Firestoreのルールやインデックスを確認してください。";
   }
 }
 
@@ -950,7 +950,7 @@ function drawSharedTrendChart(days, zeroValues, plus1Values, plus2Values){
   line(plus1Values, "+1", 0);
   line(plus2Values, "+2", -10);
 
-  ctx.fillText("直近7日 全国平均推移", pad, 20);
+  ctx.fillText("直近10日 全国平均推移", pad, 20);
   days.forEach((d,i)=>{
     const label = d.slice(5).replace("-", "/");
     ctx.fillText(label, x(i)-14, canvas.height-10);
@@ -970,7 +970,7 @@ async function loadAverageTrendGraph(){
 
   try{
     const days = [];
-    for(let i=6;i>=0;i--){
+    for(let i=9;i>=0;i--){
       days.push(getDateNDaysAgo(i));
     }
 
@@ -1005,11 +1005,11 @@ async function loadAverageTrendGraph(){
     zeroValues.forEach((v,i)=>{ if(v>0) latestIndex=i; });
     let summary = "";
     if(latestIndex >= 0){
-      summary = `<br><strong>${rank} 直近7日グラフ</strong><br>
+      summary = `<br><strong>${rank} 直近10日グラフ</strong><br>
         総投稿数：${totalPosts}件<br>
         最新平均：±0 ${yen(zeroValues[latestIndex])} / +1 ${yen(plus1Values[latestIndex])} / +2 ${yen(plus2Values[latestIndex])}<br>`;
     }else{
-      summary = `<br><strong>${rank} 直近7日グラフ</strong><br>まだ投稿データがありません。<br>`;
+      summary = `<br><strong>${rank} 直近10日グラフ</strong><br>まだ投稿データがありません。<br>`;
     }
 
     area.innerHTML = summary + rowsHtml;
@@ -1157,7 +1157,7 @@ async function predictTomorrowBorder(){
 
   try{
     const days = [];
-    for(let i=6;i>=0;i--){
+    for(let i=9;i>=0;i--){
       days.push(getDateNDaysAgo(i));
     }
 
@@ -1197,13 +1197,13 @@ async function predictTomorrowBorder(){
     let html = `<div class="prediction-card">
       <strong>🤖 ${rank} 明日のAI予測</strong><br>
       対象日：${tomorrow}<br>
-      信頼度：<strong>${conf}</strong>（直近7日投稿 ${totalPosts}件）<br><br>
+      信頼度：<strong>${conf}</strong>（直近10日投稿 ${totalPosts}件）<br><br>
       <div class="main">±0：${yen(predZero)} pt</div>
       <div class="main">+1：${yen(predPlus1)} pt</div>
       <div class="main">+2：${yen(predPlus2)} pt</div>
       <button class="dark" onclick="applySharedAverage(${predZero},${predPlus1},${predPlus2})">この予測を計算に反映</button>
       <div class="prediction-note">
-        ※直近7日の全国共有データから、直近を重視した加重平均と増減傾向で予測しています。実際のポコチャ公式ボーダーではありません。
+        ※直近10日の全国共有データから、直近を重視した加重平均と増減傾向で予測しています。実際のポコチャ公式ボーダーではありません。
       </div>
     </div>`;
 
@@ -1304,8 +1304,8 @@ function getSharedBoardDate(mode){
 }
 
 async function getSharedBoardRows(mode, rank){
-  if(mode === "recent7"){
-    return await getRowsRecentByRank(rank, 7);
+  if(mode === "recent10"){
+    return await getRowsRecentByRank(rank, 10);
   }
   const date = getSharedBoardDate(mode);
   return await getRowsByDateAndRank(date, rank);
@@ -1338,12 +1338,12 @@ async function loadSharedBoard(){
     return;
   }
 
-  const mode = prompt("表示したい種類を入力してください：today / yesterday / recent7", "today") || "today";
-  const safeMode = ["today","yesterday","recent7"].includes(mode) ? mode : "today";
+  const mode = prompt("表示したい種類を入力してください：today / yesterday / recent10", "today") || "today";
+  const safeMode = ["today","yesterday","recent10"].includes(mode) ? mode : "today";
   const ranks = ["S1","S2","S3","S4","S5","S6"];
 
-  const label = safeMode === "today" ? "今日" : safeMode === "yesterday" ? "昨日" : "直近7日";
-  const dateLabel = safeMode === "recent7" ? "直近7日" : getSharedBoardDate(safeMode);
+  const label = safeMode === "today" ? "今日" : safeMode === "yesterday" ? "昨日" : "直近10日";
+  const dateLabel = safeMode === "recent10" ? "直近10日" : getSharedBoardDate(safeMode);
 
   area.innerHTML = "全国共有ボーダー掲示板を読み込み中...";
 
@@ -1398,7 +1398,7 @@ function aiAdviceByTrend(trend){
 
 async function makeAiPredictionForRank(rank){
   const days = [];
-  for(let i=6;i>=0;i--){
+  for(let i=9;i>=0;i--){
     days.push(getDateNDaysAgo(i));
   }
 
@@ -1451,7 +1451,7 @@ function aiPredictionCard(p){
   if(!p.ok){
     return `<div class="ai-card">
       <div class="ai-rank">${p.rank}</div>
-      <div class="ai-main">予測に必要なデータがまだ足りません。<br>直近7日投稿：${p.totalPosts}件</div>
+      <div class="ai-main">予測に必要なデータがまだ足りません。<br>直近10日投稿：${p.totalPosts}件</div>
     </div>`;
   }
 
@@ -1460,7 +1460,7 @@ function aiPredictionCard(p){
     <div class="ai-main">
       予測：±0 <strong>${yen(p.zero)}</strong> / +1 <strong>${yen(p.plus1)}</strong> / +2 <strong>${yen(p.plus2)}</strong><br>
       傾向：${p.trend}<br>
-      直近7日投稿：${p.totalPosts}件<br>
+      直近10日投稿：${p.totalPosts}件<br>
       <span class="ai-confidence ${aiConfidenceClass(p.conf)}">信頼度：${p.conf}</span><br>
       ${p.advice}
     </div>
@@ -1490,7 +1490,7 @@ async function loadAiPredictionCenter(){
     let html = `<div class="ai-center">
       <div class="ai-center-title">🤖 AI予測センター</div>
       対象：${tomorrow} の予測<br>
-      <small>直近7日の全国共有データから、直近重視の加重平均＋増減傾向で予測します。</small>`;
+      <small>直近10日の全国共有データから、直近重視の加重平均＋増減傾向で予測します。</small>`;
 
     predictions.forEach(p=>{
       html += aiPredictionCard(p);
@@ -1593,7 +1593,7 @@ async function loadBorderTrendCenter(){
   try{
     const selectedRank = document.getElementById("sharedRank")?.value || "S1";
     const days = [];
-    for(let i=6;i>=0;i--){
+    for(let i=9;i>=0;i--){
       days.push(getDateNDaysAgo(i));
     }
 
@@ -1621,7 +1621,7 @@ async function loadBorderTrendCenter(){
     const canvasId = "borderTrendMainCanvas";
     let html = `<div class="border-graph-center">
       <div class="border-graph-title">📈 ${selectedRank} ボーダー推移グラフ</div>
-      <small>直近7日の全国共有平均をグラフ表示します。線は ±0 / +1 / +2 です。</small>
+      <small>直近10日の全国共有平均をグラフ表示します。線は ±0 / +1 / +2 です。</small>
       <canvas id="${canvasId}" width="520" height="260"></canvas>
       <div class="graph-summary">
         +2傾向：<strong>${trendText(plus2Values)}</strong><br>
@@ -1659,7 +1659,7 @@ async function loadAllRankBorderGraphs(){
   try{
     const ranks = ["S1","S2","S3","S4","S5","S6"];
     const days = [];
-    for(let i=6;i>=0;i--){
+    for(let i=9;i>=0;i--){
       days.push(getDateNDaysAgo(i));
     }
 
@@ -1688,7 +1688,7 @@ async function loadAllRankBorderGraphs(){
       html += `<div class="share-board-card">
         <div class="share-board-rank">${rank}</div>
         <canvas id="miniGraph_${rank}" width="520" height="160"></canvas>
-        <div class="share-board-mini">直近7日投稿数：${totalPosts}件 / +2傾向：${trendText(plus2Values)}</div>
+        <div class="share-board-mini">直近10日投稿数：${totalPosts}件 / +2傾向：${trendText(plus2Values)}</div>
       </div>`;
     }
 
@@ -1715,6 +1715,155 @@ function loadInputs(){
   if(!s){applyRankPreset();return}
   const d=JSON.parse(s);
   Object.keys(d).forEach(id=>{const el=document.getElementById(id);if(el)el.value=d[id]});
+}
+
+
+/* ===== 全国共有ボタン修正版 ===== */
+function ensureArea(id){
+  let el = document.getElementById(id);
+  if(!el){
+    el = document.createElement("div");
+    el.id = id;
+    el.className = "result";
+    const card = document.querySelector("#sec-history .card");
+    if(card) card.appendChild(el);
+  }
+  return el;
+}
+
+function safeGetRank(){
+  return document.getElementById("sharedRank")?.value || document.getElementById("rank")?.value || "S1";
+}
+
+function safeGetDate(){
+  return document.getElementById("borderDate")?.value || todayISO();
+}
+
+async function safeFirebaseReady(area){
+  if(typeof initFirebase !== "function"){
+    area.innerHTML = "Firebase初期化関数が見つかりません。";
+    return false;
+  }
+  if(!initFirebase()){
+    area.innerHTML = "Firebase接続に失敗しました。";
+    return false;
+  }
+  return true;
+}
+
+async function safeRowsByDateAndRank(date, rank){
+  if(typeof getRowsByDateAndRank === "function"){
+    return await getRowsByDateAndRank(date, rank);
+  }
+  const snap = await db.collection("shared_borders").where("date","==",date).where("rank","==",rank).get();
+  return snap.docs.map(doc=>doc.data());
+}
+
+async function safeRowsRecentByRank(rank, days){
+  if(typeof getRowsRecentByRank === "function"){
+    return await getRowsRecentByRank(rank, days);
+  }
+  const fromDate = getDateNDaysAgo(days-1);
+  const snap = await db.collection("shared_borders").where("rank","==",rank).where("date",">=",fromDate).get();
+  return snap.docs.map(doc=>doc.data());
+}
+
+async function loadSharedAverages(){
+  const area = ensureArea("sharedAverageArea");
+  const rank = safeGetRank();
+  const date = safeGetDate();
+  if(!await safeFirebaseReady(area)) return;
+  area.innerHTML = "今日の全国平均を読み込み中...";
+  try{
+    const rows = await safeRowsByDateAndRank(date, rank);
+    const avg = averageRows(rows);
+    if(!avg){
+      area.innerHTML = `<br><strong>${date} ${rank} 全国平均</strong><br>まだ投稿がありません。`;
+      return;
+    }
+    area.innerHTML = `<br><strong>${date} ${rank} 全国平均</strong><br>
+      投稿数：${avg.count}件<br>
+      ±0：${yen(avg.zero)}<br>
+      +1：${yen(avg.plus1)}<br>
+      +2：${yen(avg.plus2)}<br>
+      <button class="dark" onclick="applySharedAverage(${avg.zero},${avg.plus1},${avg.plus2})">この平均を計算に反映</button>`;
+  }catch(e){
+    console.error(e);
+    area.innerHTML = "全国平均の取得に失敗しました。Firestoreのルールやインデックスを確認してください。";
+  }
+}
+
+async function loadRecentSharedAverages(){
+  const area = ensureArea("sharedAverageArea");
+  const rank = safeGetRank();
+  if(!await safeFirebaseReady(area)) return;
+  area.innerHTML = "直近10日平均を読み込み中...";
+  try{
+    const rows = await safeRowsRecentByRank(rank, 10);
+    const avg = averageRows(rows);
+    if(!avg){
+      area.innerHTML = `<br><strong>${rank} 直近10日平均</strong><br>まだ投稿がありません。`;
+      return;
+    }
+    area.innerHTML = `<br><strong>${rank} 直近10日平均</strong><br>
+      投稿数：${avg.count}件<br>
+      ±0：${yen(avg.zero)}<br>
+      +1：${yen(avg.plus1)}<br>
+      +2：${yen(avg.plus2)}<br>
+      <button class="dark" onclick="applySharedAverage(${avg.zero},${avg.plus1},${avg.plus2})">この平均を計算に反映</button>`;
+  }catch(e){
+    console.error(e);
+    area.innerHTML = "直近10日平均の取得に失敗しました。Firestoreのルールやインデックスを確認してください。";
+  }
+}
+
+async function loadSharedBoard(){
+  const area = ensureArea("sharedBoardArea");
+  if(!await safeFirebaseReady(area)) return;
+
+  const mode = prompt("表示したい種類を入力してください：today / yesterday / recent10", "today") || "today";
+  const safeMode = ["today","yesterday","recent10"].includes(mode) ? mode : "today";
+  const ranks = ["S1","S2","S3","S4","S5","S6"];
+  const base = safeGetDate();
+  const dateLabel = safeMode === "recent10" ? "直近10日" : (safeMode === "yesterday" ? dateOffsetISO(base, -1) : base);
+  const label = safeMode === "today" ? "今日" : safeMode === "yesterday" ? "昨日" : "直近10日";
+  area.innerHTML = "全国共有ボーダー掲示板を読み込み中...";
+
+  try{
+    let totalPosts = 0;
+    let html = `<div class="share-board"><div class="share-board-title">🌐 全国共有ボーダー掲示板</div>
+      表示：${label}（${dateLabel}）<br><small>S1〜S6の共有投稿から平均を自動集計します。</small>`;
+
+    for(const rank of ranks){
+      let rows;
+      if(safeMode === "recent10"){
+        rows = await safeRowsRecentByRank(rank, 10);
+      }else{
+        rows = await safeRowsByDateAndRank(dateLabel, rank);
+      }
+      const avg = averageRows(rows);
+      if(avg) totalPosts += avg.count;
+      if(avg){
+        html += `<div class="share-board-card">
+          <div class="share-board-rank">${rank}</div>
+          <div class="share-board-mini">
+            投稿数：${avg.count}件<br>
+            ±0：<strong>${yen(avg.zero)}</strong><br>
+            +1：<strong>${yen(avg.plus1)}</strong><br>
+            +2：<strong>${yen(avg.plus2)}</strong>
+          </div>
+          <button class="dark" onclick="applySharedAverage(${avg.zero},${avg.plus1},${avg.plus2})">この平均を計算に反映</button>
+        </div>`;
+      }else{
+        html += `<div class="share-board-card"><div class="share-board-rank">${rank}</div><div class="share-board-empty">投稿データなし</div></div>`;
+      }
+    }
+    html += `<br><strong>総投稿数：${totalPosts}件</strong></div>`;
+    area.innerHTML = html;
+  }catch(e){
+    console.error(e);
+    area.innerHTML = "全国共有ボーダー掲示板の取得に失敗しました。Firestoreのルールやインデックスを確認してください。";
+  }
 }
 
 renderItems();
