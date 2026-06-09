@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ポコチャメーター 画面整理版</title>
+<title>ポコチャメーター リアルタイム同期版</title>
 <style>
 :root{
   --main:#ff6b4a;
@@ -210,6 +210,12 @@ canvas{width:100%;max-height:220px}
 .tool-grid button{margin-top:0}
 .compact-note{font-size:12px;color:var(--muted);line-height:1.5;margin:6px 0 0}
 
+
+.realtime-box{background:#eafff1;border:1px solid #b7efca;border-radius:14px;padding:12px;margin-top:10px}
+.realtime-box.off{background:#fafafa;border-color:#ddd}
+.realtime-title{font-size:16px;font-weight:900;margin-bottom:6px}
+.realtime-small{font-size:13px;color:var(--muted);line-height:1.6}
+
 </style>
 
 <link rel="manifest" href="./manifest.json">
@@ -222,7 +228,7 @@ canvas{width:100%;max-height:220px}
 </head>
 <body>
 <header>
-  <h1>ポコチャメーター 画面整理版</h1>
+  <h1>ポコチャメーター リアルタイム同期版</h1>
   <div class="subtitle">直近10日ベースで集計 / 全国共有・平均集計・コアボーナス・馬車/花火換算</div>
 </header>
 
@@ -298,7 +304,26 @@ canvas{width:100%;max-height:220px}
       <div class="compact-note">投稿・平均確認・S1〜S6掲示板をまとめました。</div>
     </div>
 
+    
     <div class="tool-section">
+      <h3>🔄 リアルタイム同期</h3>
+      <div class="tool-grid">
+        <button class="blue" onclick="startRealtimeSync()">リアルタイム同期 ON</button>
+        <button class="light" onclick="stopRealtimeSync()">リアルタイム同期 OFF</button>
+      </div>
+      <label>同期モード</label>
+      <select id="realtimeApplyMode">
+        <option value="display">表示だけ自動更新</option>
+        <option value="apply">計算ボーダーにも自動反映</option>
+        <option value="ask">反映前に確認</option>
+      </select>
+      <div id="realtimeStatus" class="realtime-box off">
+        <div class="realtime-title">リアルタイム同期：OFF</div>
+        <div class="realtime-small">ONにすると、誰かが全国共有に投稿した時に平均が自動更新されます。</div>
+      </div>
+    </div>
+
+<div class="tool-section">
       <h3>📊 分析</h3>
       <div class="tool-grid">
         <button class="blue" onclick="loadYesterdayComparison()">昨日との差</button>
@@ -1732,7 +1757,7 @@ async function loadAllRankBorderGraphs(){
 }
 
 function saveInputs(){
-  const ids=["point","yellBonusPoint","zero","plus1","plus2","quickMinutes","deadline","rank","sharedRank","autoApplyRank","autoApplyMode","base","coreCount","selectedItem"];
+  const ids=["point","yellBonusPoint","zero","plus1","plus2","quickMinutes","deadline","rank","sharedRank","autoApplyRank","autoApplyMode","realtimeApplyMode","base","coreCount","selectedItem"];
   const d={};ids.forEach(id=>d[id]=document.getElementById(id).value);
   localStorage.setItem("inputsMobile",JSON.stringify(d));
 }
@@ -1914,6 +1939,107 @@ if(typeof applyTodayAverageNow !== "function"){
       console.error(e);
       alert("全国平均の反映に失敗しました");
     }
+  }
+}
+
+
+/* ===== リアルタイム同期版 ===== */
+let realtimeUnsubscribe = null;
+let realtimeLastSignature = "";
+
+function setRealtimeStatus(on, htmlText){
+  const el = document.getElementById("realtimeStatus");
+  if(!el) return;
+  el.className = "realtime-box" + (on ? "" : " off");
+  el.innerHTML = htmlText;
+}
+
+function getRealtimeMode(){
+  return document.getElementById("realtimeApplyMode")?.value || "display";
+}
+
+function realtimeSignature(avg){
+  if(!avg) return "none";
+  return `${avg.count}-${avg.zero}-${avg.plus1}-${avg.plus2}`;
+}
+
+async function startRealtimeSync(){
+  const rank = document.getElementById("sharedRank")?.value || document.getElementById("rank")?.value || "S1";
+  const date = document.getElementById("borderDate")?.value || todayISO();
+
+  if(typeof initFirebase !== "function" || !initFirebase()){
+    setRealtimeStatus(false, `<div class="realtime-title">リアルタイム同期：エラー</div><div class="realtime-small">Firebaseに接続できません。</div>`);
+    return;
+  }
+
+  stopRealtimeSync(false);
+
+  setRealtimeStatus(true, `<div class="realtime-title">リアルタイム同期：ON</div><div class="realtime-small">${date} ${rank} を監視中...</div>`);
+
+  try{
+    realtimeUnsubscribe = db.collection("shared_borders")
+      .where("date","==",date)
+      .where("rank","==",rank)
+      .onSnapshot(snapshot => {
+        const rows = snapshot.docs.map(doc => doc.data());
+        const avg = averageRows(rows);
+        const sig = realtimeSignature(avg);
+
+        if(sig === realtimeLastSignature) return;
+        realtimeLastSignature = sig;
+
+        if(!avg){
+          setRealtimeStatus(true, `<div class="realtime-title">リアルタイム同期：ON</div><div class="realtime-small">${date} ${rank}<br>まだ投稿がありません。</div>`);
+          return;
+        }
+
+        setRealtimeStatus(true, `<div class="realtime-title">🔄 リアルタイム更新</div>
+          <div class="realtime-small">
+            ${date} ${rank}<br>
+            投稿数：${avg.count}件<br>
+            ±0：${yen(avg.zero)} / +1：${yen(avg.plus1)} / +2：${yen(avg.plus2)}
+          </div>`);
+
+        const area = document.getElementById("sharedAverageArea");
+        if(area){
+          area.innerHTML = `<br><strong>🔄 リアルタイム全国平均</strong><br>
+            ${date} ${rank}<br>
+            投稿数：${avg.count}件<br>
+            ±0：${yen(avg.zero)}<br>
+            +1：${yen(avg.plus1)}<br>
+            +2：${yen(avg.plus2)}<br>
+            <button class="dark" onclick="applySharedAverage(${avg.zero},${avg.plus1},${avg.plus2})">この平均を計算に反映</button>`;
+        }
+
+        const mode = getRealtimeMode();
+        if(mode === "apply"){
+          applySharedAverage(avg.zero, avg.plus1, avg.plus2);
+          saveInputs();
+        }else if(mode === "ask"){
+          const ok = confirm(`${date} ${rank} の全国平均が更新されました。\n計算ボーダーへ反映しますか？\n\n±0 ${yen(avg.zero)}\n+1 ${yen(avg.plus1)}\n+2 ${yen(avg.plus2)}`);
+          if(ok){
+            applySharedAverage(avg.zero, avg.plus1, avg.plus2);
+            saveInputs();
+          }
+        }
+      }, error => {
+        console.error(error);
+        setRealtimeStatus(false, `<div class="realtime-title">リアルタイム同期：エラー</div><div class="realtime-small">Firestoreのルールやインデックスを確認してください。</div>`);
+      });
+  }catch(e){
+    console.error(e);
+    setRealtimeStatus(false, `<div class="realtime-title">リアルタイム同期：エラー</div><div class="realtime-small">同期開始に失敗しました。</div>`);
+  }
+}
+
+function stopRealtimeSync(showMessage=true){
+  if(realtimeUnsubscribe){
+    realtimeUnsubscribe();
+    realtimeUnsubscribe = null;
+  }
+  realtimeLastSignature = "";
+  if(showMessage){
+    setRealtimeStatus(false, `<div class="realtime-title">リアルタイム同期：OFF</div><div class="realtime-small">同期を停止しました。</div>`);
   }
 }
 
