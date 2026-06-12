@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ポコチャメーター リアルタイム同期版</title>
+<title>ポコチャメーター 半自動入力版</title>
 <style>
 :root{
   --main:#ff6b4a;
@@ -216,6 +216,23 @@ canvas{width:100%;max-height:220px}
 .realtime-title{font-size:16px;font-weight:900;margin-bottom:6px}
 .realtime-small{font-size:13px;color:var(--muted);line-height:1.6}
 
+
+.assist-card{background:#fffdf7;border:1px solid #ffe1a8;border-radius:16px;padding:12px;margin:12px 0}
+.assist-card h3{font-size:15px;margin:0 0 8px;font-weight:900}
+.assist-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px}
+.assist-row button{font-size:13px;padding:10px 4px;margin-top:0}
+textarea{
+  width:100%;
+  min-height:86px;
+  border:1px solid #ddd;
+  border-radius:12px;
+  padding:10px;
+  font-size:15px;
+  resize:vertical;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+.assist-preview{background:#fafafa;border:1px dashed #ddd;border-radius:12px;padding:10px;font-size:13px;color:var(--muted);line-height:1.5;margin-top:8px}
+
 </style>
 
 <link rel="manifest" href="./manifest.json">
@@ -228,7 +245,7 @@ canvas{width:100%;max-height:220px}
 </head>
 <body>
 <header>
-  <h1>ポコチャメーター リアルタイム同期版</h1>
+  <h1>ポコチャメーター 半自動入力版</h1>
   <div class="subtitle">直近10日ベースで集計 / 全国共有・平均集計・コアボーナス・馬車/花火換算</div>
 </header>
 
@@ -274,6 +291,37 @@ canvas{width:100%;max-height:220px}
     </div>
     <label>自分の最終pt 任意</label>
     <input id="myFinalPoint" type="number" inputmode="numeric">
+
+    <div class="assist-card">
+      <h3>📸 半自動入力サポート</h3>
+      <small>
+        ポコチャ画面を見ながら、ボーダー数値を素早く入力する補助機能です。<br>
+        アプリ自動取得はせず、BANリスクの少ない手入力補助だけ行います。
+      </small>
+
+      <label>スクショメモ・貼り付け欄</label>
+      <textarea id="borderPasteText" placeholder="例：S6 ±0 1,200,000 +1 2,300,000 +2 3,500,000"></textarea>
+
+      <button class="blue" onclick="parseBorderText()">貼り付け内容から自動入力</button>
+      <button class="dark" onclick="loadLastAssistBorder()">前回の入力を呼び出す</button>
+
+      <div class="assist-row">
+        <button class="light" onclick="adjustHistBorders(10000)">+1万</button>
+        <button class="light" onclick="adjustHistBorders(50000)">+5万</button>
+        <button class="light" onclick="adjustHistBorders(100000)">+10万</button>
+      </div>
+      <div class="assist-row">
+        <button class="light" onclick="adjustHistBorders(-10000)">-1万</button>
+        <button class="light" onclick="adjustHistBorders(-50000)">-5万</button>
+        <button class="light" onclick="adjustHistBorders(-100000)">-10万</button>
+      </div>
+
+      <button class="blue" onclick="copyHistToMainBorders()">履歴入力を計算画面へ反映</button>
+      <button class="dark" onclick="saveBorderHistory(); submitSharedBorder();">保存して全国共有</button>
+
+      <div id="assistStatus" class="assist-preview">スクショを見ながら数字を入力、またはテキストを貼り付けてください。</div>
+    </div>
+
     <button onclick="saveBorderHistory()">保存</button>
     <button class="blue" onclick="saveAndSubmitSharedBorder()">保存して全国共有にも投稿</button>
     <button class="blue" onclick="predictBorders()">直近平均を計算</button>
@@ -2041,6 +2089,94 @@ function stopRealtimeSync(showMessage=true){
   if(showMessage){
     setRealtimeStatus(false, `<div class="realtime-title">リアルタイム同期：OFF</div><div class="realtime-small">同期を停止しました。</div>`);
   }
+}
+
+
+/* ===== 半自動入力サポート ===== */
+function setAssistStatus(msg){
+  const el = document.getElementById("assistStatus");
+  if(el) el.innerHTML = msg;
+}
+
+function normalizeNumberText(text){
+  return String(text || "").replace(/[，,]/g,"").replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0)-0xFEE0));
+}
+
+function extractNumbersFromText(text){
+  const normalized = normalizeNumberText(text);
+  const nums = normalized.match(/\d{3,}/g) || [];
+  return nums.map(n => Number(n)).filter(n => n > 0);
+}
+
+function parseBorderText(){
+  const text = document.getElementById("borderPasteText")?.value || "";
+  const normalized = normalizeNumberText(text);
+  const nums = extractNumbersFromText(normalized);
+
+  if(nums.length < 3){
+    setAssistStatus("数字が3つ以上見つかりませんでした。±0、+1、+2の順で入力するか貼り付けてください。");
+    return;
+  }
+
+  let z = nums[0], p1 = nums[1], p2 = nums[2];
+
+  if(!(z <= p1 && p1 <= p2)){
+    const sorted = nums.slice(0,3).sort((a,b)=>a-b);
+    z = sorted[0]; p1 = sorted[1]; p2 = sorted[2];
+  }
+
+  document.getElementById("histZero").value = z;
+  document.getElementById("histPlus1").value = p1;
+  document.getElementById("histPlus2").value = p2;
+
+  localStorage.setItem("lastAssistBorder", JSON.stringify({
+    zero:z, plus1:p1, plus2:p2, text, savedAt:new Date().toISOString()
+  }));
+
+  setAssistStatus(`自動入力しました：<br>±0 ${yen(z)} / +1 ${yen(p1)} / +2 ${yen(p2)}`);
+}
+
+function loadLastAssistBorder(){
+  const raw = localStorage.getItem("lastAssistBorder");
+  if(!raw){
+    setAssistStatus("前回入力がありません。");
+    return;
+  }
+  const d = JSON.parse(raw);
+  document.getElementById("histZero").value = d.zero || 0;
+  document.getElementById("histPlus1").value = d.plus1 || 0;
+  document.getElementById("histPlus2").value = d.plus2 || 0;
+  if(document.getElementById("borderPasteText")) document.getElementById("borderPasteText").value = d.text || "";
+  setAssistStatus(`前回入力を呼び出しました：<br>±0 ${yen(d.zero)} / +1 ${yen(d.plus1)} / +2 ${yen(d.plus2)}`);
+}
+
+function adjustHistBorders(delta){
+  ["histZero","histPlus1","histPlus2"].forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    const next = Math.max(0, Number(el.value || 0) + delta);
+    el.value = next;
+  });
+  setAssistStatus(`${delta > 0 ? "+" : ""}${yen(delta)} で微調整しました。`);
+}
+
+function copyHistToMainBorders(){
+  const z = num("histZero");
+  const p1 = num("histPlus1");
+  const p2 = num("histPlus2");
+
+  if(z <= 0 || p1 <= 0 || p2 <= 0){
+    setAssistStatus("±0、+1、+2を入力してから反映してください。");
+    return;
+  }
+
+  document.getElementById("zero").value = z;
+  document.getElementById("plus1").value = p1;
+  document.getElementById("plus2").value = p2;
+  saveInputs();
+  showSection("main");
+  calc();
+  setAssistStatus("計算画面へ反映しました。");
 }
 
 renderItems();
