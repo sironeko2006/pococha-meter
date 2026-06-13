@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ポコチャメーター 半自動入力版</title>
+<title>ポコチャメーター 全体反映版</title>
 <style>
 :root{
   --main:#ff6b4a;
@@ -233,6 +233,12 @@ textarea{
 }
 .assist-preview{background:#fafafa;border:1px dashed #ddd;border-radius:12px;padding:10px;font-size:13px;color:var(--muted);line-height:1.5;margin-top:8px}
 
+
+.global-meter-box{background:#eef7ff;border:1px solid #cfe7ff;border-radius:14px;padding:12px;margin-top:10px}
+.global-meter-box.live{background:#eafff1;border-color:#b7efca}
+.global-meter-title{font-size:16px;font-weight:900;margin-bottom:6px}
+.global-meter-mini{font-size:13px;color:var(--muted);line-height:1.6}
+
 </style>
 
 <link rel="manifest" href="./manifest.json">
@@ -245,7 +251,7 @@ textarea{
 </head>
 <body>
 <header>
-  <h1>ポコチャメーター 半自動入力版</h1>
+  <h1>ポコチャメーター 全体反映版</h1>
   <div class="subtitle">直近10日ベースで集計 / 全国共有・平均集計・コアボーナス・馬車/花火換算</div>
 </header>
 
@@ -353,7 +359,34 @@ textarea{
     </div>
 
     
+    
     <div class="tool-section">
+      <h3>🌍 全体反映メーター</h3>
+      <small>
+        誰かが投稿した最新メーターを、同じランクの利用者にリアルタイム共有します。<br>
+        強制反映ではなく、ONにした人だけ反映されます。
+      </small>
+
+      <label>全体反映モード</label>
+      <select id="globalMeterMode">
+        <option value="display">表示だけ更新</option>
+        <option value="apply">計算画面にも自動反映</option>
+        <option value="ask">確認してから反映</option>
+      </select>
+
+      <div class="tool-grid">
+        <button class="blue" onclick="publishGlobalMeter()">今の履歴入力を全体に反映</button>
+        <button class="blue" onclick="startGlobalMeterSync()">全体反映を受け取る ON</button>
+        <button class="light" onclick="stopGlobalMeterSync()">全体反映 OFF</button>
+      </div>
+
+      <div id="globalMeterStatus" class="global-meter-box">
+        <div class="global-meter-title">全体反映：OFF</div>
+        <div class="global-meter-mini">ONにすると、誰かが投稿した最新メーターがリアルタイムで表示されます。</div>
+      </div>
+    </div>
+
+<div class="tool-section">
       <h3>🔄 リアルタイム同期</h3>
       <div class="tool-grid">
         <button class="blue" onclick="startRealtimeSync()">リアルタイム同期 ON</button>
@@ -1805,7 +1838,7 @@ async function loadAllRankBorderGraphs(){
 }
 
 function saveInputs(){
-  const ids=["point","yellBonusPoint","zero","plus1","plus2","quickMinutes","deadline","rank","sharedRank","autoApplyRank","autoApplyMode","realtimeApplyMode","base","coreCount","selectedItem"];
+  const ids=["point","yellBonusPoint","zero","plus1","plus2","quickMinutes","deadline","rank","sharedRank","autoApplyRank","autoApplyMode","realtimeApplyMode","globalMeterMode","base","coreCount","selectedItem"];
   const d={};ids.forEach(id=>d[id]=document.getElementById(id).value);
   localStorage.setItem("inputsMobile",JSON.stringify(d));
 }
