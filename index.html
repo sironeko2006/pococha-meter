@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ポコチャメーター 全体反映版</title>
+<title>ポコチャメーター ファミリー反映版</title>
 <style>
 :root{
   --main:#ff6b4a;
@@ -239,6 +239,17 @@ textarea{
 .global-meter-title{font-size:16px;font-weight:900;margin-bottom:6px}
 .global-meter-mini{font-size:13px;color:var(--muted);line-height:1.6}
 
+
+.family-hero{background:linear-gradient(180deg,#fff7f3,#ffffff);border:1px solid #ffd6c8;border-radius:18px;padding:14px;margin:12px 0}
+.family-title{font-size:20px;font-weight:900;margin-bottom:6px}
+.family-meter-big{background:#fff;border:1px solid #eee;border-radius:16px;padding:14px;margin-top:10px}
+.family-meter-big .rank{font-size:16px;color:var(--muted);font-weight:900}
+.family-meter-big .main{font-size:24px;font-weight:900;color:var(--main);line-height:1.5}
+.family-meter-big .sub{font-size:13px;color:var(--muted);line-height:1.6}
+.family-actions{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
+.family-actions button{margin-top:0}
+.family-guide{background:#f7fbff;border:1px solid #d8e8ff;border-radius:14px;padding:10px;font-size:13px;line-height:1.7;color:var(--muted);margin-top:10px}
+
 </style>
 
 <link rel="manifest" href="./manifest.json">
@@ -251,8 +262,8 @@ textarea{
 </head>
 <body>
 <header>
-  <h1>ポコチャメーター 全体反映版</h1>
-  <div class="subtitle">直近10日ベースで集計 / 全国共有・平均集計・コアボーナス・馬車/花火換算</div>
+  <h1>ポコチャメーター ファミリー反映版</h1>
+  <div class="subtitle">直近10日ベースで集計 / 共有・平均集計・コアボーナス・馬車/花火換算</div>
 </header>
 
 <main>
@@ -288,6 +299,38 @@ textarea{
 <section id="sec-history" class="section">
   <div class="card">
     <h2>📊 前日ボーダー履歴</h2>
+
+    <div class="family-hero">
+      <div class="family-title">👪 ファミリー共有メーター</div>
+      <small>
+        ファミリー内で今日のメーターを共有するためのシンプル画面です。<br>
+        入力係が投稿すると、見る人の画面にも反映されます。
+      </small>
+
+      <div class="family-meter-big" id="familyMeterDisplay">
+        <div class="rank">今日の共有メーター</div>
+        <div class="main">まだ受信していません</div>
+        <div class="sub">下の「受け取りON」を押すと共有メーターを受信します。</div>
+      </div>
+
+      <label>ファミリー共有ランク</label>
+      <select id="familyRank">
+        <option value="S1">S1</option><option value="S2">S2</option><option value="S3">S3</option>
+        <option value="S4">S4</option><option value="S5">S5</option><option value="S6">S6</option>
+      </select>
+
+      <div class="family-actions">
+        <button class="blue" onclick="publishFamilyMeter()">入力したメーターをファミリー共有</button>
+        <button class="dark" onclick="startFamilyMeterSync()">共有メーター受け取りON</button>
+        <button class="light" onclick="stopFamilyMeterSync()">受け取りOFF</button>
+      </div>
+
+      <div class="family-guide">
+        使い方：①入力係が ±0/+1/+2 を入力 → ②「ファミリー共有」 → ③見る人は「受け取りON」<br>
+        ※ポコチャ公式アプリから自動取得はしません。ファミリー内の手入力共有です。
+      </div>
+    </div>
+
     <label>日付</label>
     <input id="borderDate" type="date">
     <div class="grid3">
@@ -323,19 +366,19 @@ textarea{
       </div>
 
       <button class="blue" onclick="copyHistToMainBorders()">履歴入力を計算画面へ反映</button>
-      <button class="dark" onclick="saveBorderHistory(); submitSharedBorder();">保存して全国共有</button>
+      <button class="dark" onclick="saveBorderHistory(); submitSharedBorder();">保存して共有</button>
 
       <div id="assistStatus" class="assist-preview">スクショを見ながら数字を入力、またはテキストを貼り付けてください。</div>
     </div>
 
     <button onclick="saveBorderHistory()">保存</button>
-    <button class="blue" onclick="saveAndSubmitSharedBorder()">保存して全国共有にも投稿</button>
+    <button class="blue" onclick="saveAndSubmitSharedBorder()">保存して共有にも投稿</button>
     <button class="blue" onclick="predictBorders()">直近平均を計算</button>
     <button class="dark" onclick="applyPredictedBorders()">平均ボーダーを反映</button>
     <button class="light" onclick="downloadBorderCSV()">CSV出力</button>
 
     <hr style="border:0;border-top:1px solid var(--line);margin:16px 0;">
-    <h2>🌐 全国共有ボーダー</h2>
+    <h2>🌐 共有ボーダー</h2>
     <small>
       日付・ランク帯・±0/+1/+2を匿名で共有します。<br>
       個人名やポコチャIDは保存しません。
@@ -348,12 +391,12 @@ textarea{
     </select>
 
     <div class="tool-section">
-      <h3>🌐 全国共有</h3>
+      <h3>🌐 共有</h3>
       <div class="tool-grid">
-        <button class="blue" onclick="submitSharedBorder()">全国共有に投稿</button>
-        <button class="dark" onclick="loadSharedAverages()">今日の全国平均</button>
+        <button class="blue" onclick="submitSharedBorder()">共有に投稿</button>
+        <button class="dark" onclick="loadSharedAverages()">今日の共有平均</button>
         <button class="light" onclick="loadRecentSharedAverages()">直近10日平均</button>
-        <button class="blue" onclick="loadSharedBoard()">全国共有ボーダー掲示板</button>
+        <button class="blue" onclick="loadSharedBoard()">共有ボーダー掲示板</button>
       </div>
       <div class="compact-note">投稿・平均確認・S1〜S6掲示板をまとめました。</div>
     </div>
@@ -361,13 +404,13 @@ textarea{
     
     
     <div class="tool-section">
-      <h3>🌍 全体反映メーター</h3>
+      <h3>👪 ファミリーファミリー反映</h3>
       <small>
         誰かが投稿した最新メーターを、同じランクの利用者にリアルタイム共有します。<br>
         強制反映ではなく、ONにした人だけ反映されます。
       </small>
 
-      <label>全体反映モード</label>
+      <label>ファミリー反映モード</label>
       <select id="globalMeterMode">
         <option value="display">表示だけ更新</option>
         <option value="apply">計算画面にも自動反映</option>
@@ -376,12 +419,12 @@ textarea{
 
       <div class="tool-grid">
         <button class="blue" onclick="publishGlobalMeter()">今の履歴入力を全体に反映</button>
-        <button class="blue" onclick="startGlobalMeterSync()">全体反映を受け取る ON</button>
-        <button class="light" onclick="stopGlobalMeterSync()">全体反映 OFF</button>
+        <button class="blue" onclick="startGlobalMeterSync()">ファミリー反映を受け取る ON</button>
+        <button class="light" onclick="stopGlobalMeterSync()">ファミリー反映 OFF</button>
       </div>
 
       <div id="globalMeterStatus" class="global-meter-box">
-        <div class="global-meter-title">全体反映：OFF</div>
+        <div class="global-meter-title">ファミリー反映：OFF</div>
         <div class="global-meter-mini">ONにすると、誰かが投稿した最新メーターがリアルタイムで表示されます。</div>
       </div>
     </div>
@@ -400,7 +443,7 @@ textarea{
       </select>
       <div id="realtimeStatus" class="realtime-box off">
         <div class="realtime-title">リアルタイム同期：OFF</div>
-        <div class="realtime-small">ONにすると、誰かが全国共有に投稿した時に平均が自動更新されます。</div>
+        <div class="realtime-small">ONにすると、誰かが共有に投稿した時に平均が自動更新されます。</div>
       </div>
     </div>
 
@@ -408,7 +451,7 @@ textarea{
       <h3>📊 分析</h3>
       <div class="tool-grid">
         <button class="blue" onclick="loadYesterdayComparison()">昨日との差</button>
-        <button class="blue" onclick="loadAverageTrendGraph()">全国平均グラフ</button>
+        <button class="blue" onclick="loadAverageTrendGraph()">共有平均グラフ</button>
         <button class="blue" onclick="loadBorderTrendCenter()">ボーダー推移グラフ</button>
         <button class="blue" onclick="loadRiseAlert()">急上昇アラート</button>
       </div>
@@ -420,7 +463,7 @@ textarea{
       <div class="tool-grid">
         <button class="blue" onclick="predictTomorrowBorder()">明日のAI予測</button>
         <button class="blue" onclick="loadAiPredictionCenter()">AI予測センター</button>
-        <button class="dark" onclick="applyTodayAverageNow()">今日の全国平均を計算へ反映</button>
+        <button class="dark" onclick="applyTodayAverageNow()">今日の共有平均を計算へ反映</button>
       </div>
       <div class="compact-note">直近10日の共有データから予測・反映します。</div>
     </div>
@@ -487,9 +530,9 @@ textarea{
 
 
   <div class="card">
-    <h2>✨ 全国平均の自動反映</h2>
+    <h2>✨ 共有平均の自動反映</h2>
     <small>
-      アプリを開いた時に、選択したランクの「今日の全国平均」を自動で計算画面へ入れます。<br>
+      アプリを開いた時に、選択したランクの「今日の共有平均」を自動で計算画面へ入れます。<br>
       投稿がまだない場合は何もしません。
     </small>
 
@@ -506,7 +549,7 @@ textarea{
       <option value="ask">確認してから反映</option>
     </select>
 
-    <button class="blue" onclick="applyTodayAverageNow()">今すぐ今日の全国平均を反映</button>
+    <button class="blue" onclick="applyTodayAverageNow()">今すぐ今日の共有平均を反映</button>
     <div id="autoApplyStatus" class="result"></div>
   </div>
 
@@ -791,7 +834,7 @@ function drawBorderChart(list){
 
 
 /* ==========================================================
-   Firebase 全国共有機能
+   Firebase 共有機能
 ========================================================== */
 
 const firebaseConfig = {
@@ -896,11 +939,11 @@ async function loadSharedAverages(){
     const avg = averageRows(rows);
 
     if(!avg){
-      area.innerHTML = `<br><strong>${date} ${rank} 全国平均</strong><br>まだ投稿がありません。`;
+      area.innerHTML = `<br><strong>${date} ${rank} 共有平均</strong><br>まだ投稿がありません。`;
       return;
     }
 
-    area.innerHTML = `<br><strong>${date} ${rank} 全国平均</strong><br>
+    area.innerHTML = `<br><strong>${date} ${rank} 共有平均</strong><br>
       投稿数：${avg.count}件<br>
       ±0：${yen(avg.zero)}<br>
       +1：${yen(avg.plus1)}<br>
@@ -908,7 +951,7 @@ async function loadSharedAverages(){
       <button class="dark" onclick="applySharedAverage(${avg.zero},${avg.plus1},${avg.plus2})">この平均を計算に反映</button>`;
   }catch(e){
     console.error(e);
-    area.innerHTML = "全国平均の取得に失敗しました。Firestoreのルールやインデックスを確認してください。";
+    area.innerHTML = "共有平均の取得に失敗しました。Firestoreのルールやインデックスを確認してください。";
   }
 }
 
@@ -1083,7 +1126,7 @@ function drawSharedTrendChart(days, zeroValues, plus1Values, plus2Values){
   line(plus1Values, "+1", 0);
   line(plus2Values, "+2", -10);
 
-  ctx.fillText("直近10日 全国平均推移", pad, 20);
+  ctx.fillText("直近10日 共有平均推移", pad, 20);
   days.forEach((d,i)=>{
     const label = d.slice(5).replace("-", "/");
     ctx.fillText(label, x(i)-14, canvas.height-10);
@@ -1099,7 +1142,7 @@ async function loadAverageTrendGraph(){
     return;
   }
 
-  area.innerHTML = "全国平均グラフを読み込み中...";
+  area.innerHTML = "共有平均グラフを読み込み中...";
 
   try{
     const days = [];
@@ -1148,7 +1191,7 @@ async function loadAverageTrendGraph(){
     area.innerHTML = summary + rowsHtml;
   }catch(e){
     console.error(e);
-    area.innerHTML = "全国平均グラフの取得に失敗しました。Firestoreのルールやインデックスを確認してください。";
+    area.innerHTML = "共有平均グラフの取得に失敗しました。Firestoreのルールやインデックスを確認してください。";
   }
 }
 
@@ -1182,7 +1225,7 @@ function setAutoApplyStatus(message){
 
 async function applyTodayAverageNow(){
   const rank = document.getElementById("autoApplyRank")?.value || document.getElementById("sharedRank")?.value || "S1";
-  setAutoApplyStatus("今日の全国平均を確認中...");
+  setAutoApplyStatus("今日の共有平均を確認中...");
 
   try{
     const result = await getTodayAverageForRank(rank);
@@ -1203,7 +1246,7 @@ async function applyTodayAverageNow(){
     showSection("main");
     calc();
 
-    setAutoApplyStatus(`${result.date} ${rank} 全国平均を反映しました。<br>投稿数：${avg.count}件<br>±0 ${yen(avg.zero)} / +1 ${yen(avg.plus1)} / +2 ${yen(avg.plus2)}`);
+    setAutoApplyStatus(`${result.date} ${rank} 共有平均を反映しました。<br>投稿数：${avg.count}件<br>±0 ${yen(avg.zero)} / +1 ${yen(avg.plus1)} / +2 ${yen(avg.plus2)}`);
   }catch(e){
     console.error(e);
     setAutoApplyStatus("自動反映に失敗しました。Firestoreのルールやインデックスを確認してください。");
@@ -1224,7 +1267,7 @@ async function autoApplyOnStartup(){
     }
 
     if(mode === "ask"){
-      const ok = confirm(`${result.date} ${rank} の全国平均を計算画面へ反映しますか？\n\n±0 ${yen(result.avg.zero)}\n+1 ${yen(result.avg.plus1)}\n+2 ${yen(result.avg.plus2)}`);
+      const ok = confirm(`${result.date} ${rank} の共有平均を計算画面へ反映しますか？\n\n±0 ${yen(result.avg.zero)}\n+1 ${yen(result.avg.plus1)}\n+2 ${yen(result.avg.plus2)}`);
       if(!ok) return;
     }
 
@@ -1236,7 +1279,7 @@ async function autoApplyOnStartup(){
 
     saveInputs();
     calc();
-    setAutoApplyStatus(`${rank} 今日の全国平均を自動反映しました。`);
+    setAutoApplyStatus(`${rank} 今日の共有平均を自動反映しました。`);
   }catch(e){
     console.error(e);
     setAutoApplyStatus("起動時の自動反映に失敗しました。");
@@ -1336,7 +1379,7 @@ async function predictTomorrowBorder(){
       <div class="main">+2：${yen(predPlus2)} pt</div>
       <button class="dark" onclick="applySharedAverage(${predZero},${predPlus1},${predPlus2})">この予測を計算に反映</button>
       <div class="prediction-note">
-        ※直近10日の全国共有データから、直近を重視した加重平均と増減傾向で予測しています。実際のポコチャ公式ボーダーではありません。
+        ※直近10日の共有データから、直近を重視した加重平均と増減傾向で予測しています。実際のポコチャ公式ボーダーではありません。
       </div>
     </div>`;
 
@@ -1478,12 +1521,12 @@ async function loadSharedBoard(){
   const label = safeMode === "today" ? "今日" : safeMode === "yesterday" ? "昨日" : "直近10日";
   const dateLabel = safeMode === "recent10" ? "直近10日" : getSharedBoardDate(safeMode);
 
-  area.innerHTML = "全国共有ボーダー掲示板を読み込み中...";
+  area.innerHTML = "共有ボーダー掲示板を読み込み中...";
 
   try{
     let totalPosts = 0;
     let html = `<div class="share-board">
-      <div class="share-board-title">🌐 全国共有ボーダー掲示板</div>
+      <div class="share-board-title">🌐 共有ボーダー掲示板</div>
       表示：${label}（${dateLabel}）<br>
       <small>S1〜S6の共有投稿から平均を自動集計します。</small>`;
 
@@ -1498,7 +1541,7 @@ async function loadSharedBoard(){
     area.innerHTML = html;
   }catch(e){
     console.error(e);
-    area.innerHTML = "全国共有ボーダー掲示板の取得に失敗しました。Firestoreのルールやインデックスを確認してください。";
+    area.innerHTML = "共有ボーダー掲示板の取得に失敗しました。Firestoreのルールやインデックスを確認してください。";
   }
 }
 
@@ -1623,7 +1666,7 @@ async function loadAiPredictionCenter(){
     let html = `<div class="ai-center">
       <div class="ai-center-title">🤖 AI予測センター</div>
       対象：${tomorrow} の予測<br>
-      <small>直近10日の全国共有データから、直近重視の加重平均＋増減傾向で予測します。</small>`;
+      <small>直近10日の共有データから、直近重視の加重平均＋増減傾向で予測します。</small>`;
 
     predictions.forEach(p=>{
       html += aiPredictionCard(p);
@@ -1754,7 +1797,7 @@ async function loadBorderTrendCenter(){
     const canvasId = "borderTrendMainCanvas";
     let html = `<div class="border-graph-center">
       <div class="border-graph-title">📈 ${selectedRank} ボーダー推移グラフ</div>
-      <small>直近10日の全国共有平均をグラフ表示します。線は ±0 / +1 / +2 です。</small>
+      <small>直近10日の共有平均をグラフ表示します。線は ±0 / +1 / +2 です。</small>
       <canvas id="${canvasId}" width="520" height="260"></canvas>
       <div class="graph-summary">
         +2傾向：<strong>${trendText(plus2Values)}</strong><br>
@@ -1838,7 +1881,7 @@ async function loadAllRankBorderGraphs(){
 }
 
 function saveInputs(){
-  const ids=["point","yellBonusPoint","zero","plus1","plus2","quickMinutes","deadline","rank","sharedRank","autoApplyRank","autoApplyMode","realtimeApplyMode","globalMeterMode","base","coreCount","selectedItem"];
+  const ids=["point","yellBonusPoint","zero","plus1","plus2","quickMinutes","deadline","rank","sharedRank","autoApplyRank","autoApplyMode","realtimeApplyMode","globalMeterMode","familyRank","base","coreCount","selectedItem"];
   const d={};ids.forEach(id=>d[id]=document.getElementById(id).value);
   localStorage.setItem("inputsMobile",JSON.stringify(d));
 }
@@ -1851,7 +1894,7 @@ function loadInputs(){
 }
 
 
-/* ===== 全国共有ボタン修正版 ===== */
+/* ===== 共有ボタン修正版 ===== */
 function ensureArea(id){
   let el = document.getElementById(id);
   if(!el){
@@ -1906,15 +1949,15 @@ async function loadSharedAverages(){
   const rank = safeGetRank();
   const date = safeGetDate();
   if(!await safeFirebaseReady(area)) return;
-  area.innerHTML = "今日の全国平均を読み込み中...";
+  area.innerHTML = "今日の共有平均を読み込み中...";
   try{
     const rows = await safeRowsByDateAndRank(date, rank);
     const avg = averageRows(rows);
     if(!avg){
-      area.innerHTML = `<br><strong>${date} ${rank} 全国平均</strong><br>まだ投稿がありません。`;
+      area.innerHTML = `<br><strong>${date} ${rank} 共有平均</strong><br>まだ投稿がありません。`;
       return;
     }
-    area.innerHTML = `<br><strong>${date} ${rank} 全国平均</strong><br>
+    area.innerHTML = `<br><strong>${date} ${rank} 共有平均</strong><br>
       投稿数：${avg.count}件<br>
       ±0：${yen(avg.zero)}<br>
       +1：${yen(avg.plus1)}<br>
@@ -1922,7 +1965,7 @@ async function loadSharedAverages(){
       <button class="dark" onclick="applySharedAverage(${avg.zero},${avg.plus1},${avg.plus2})">この平均を計算に反映</button>`;
   }catch(e){
     console.error(e);
-    area.innerHTML = "全国平均の取得に失敗しました。Firestoreのルールやインデックスを確認してください。";
+    area.innerHTML = "共有平均の取得に失敗しました。Firestoreのルールやインデックスを確認してください。";
   }
 }
 
@@ -1960,11 +2003,11 @@ async function loadSharedBoard(){
   const base = safeGetDate();
   const dateLabel = safeMode === "recent10" ? "直近10日" : (safeMode === "yesterday" ? dateOffsetISO(base, -1) : base);
   const label = safeMode === "today" ? "今日" : safeMode === "yesterday" ? "昨日" : "直近10日";
-  area.innerHTML = "全国共有ボーダー掲示板を読み込み中...";
+  area.innerHTML = "共有ボーダー掲示板を読み込み中...";
 
   try{
     let totalPosts = 0;
-    let html = `<div class="share-board"><div class="share-board-title">🌐 全国共有ボーダー掲示板</div>
+    let html = `<div class="share-board"><div class="share-board-title">🌐 共有ボーダー掲示板</div>
       表示：${label}（${dateLabel}）<br><small>S1〜S6の共有投稿から平均を自動集計します。</small>`;
 
     for(const rank of ranks){
@@ -1995,7 +2038,7 @@ async function loadSharedBoard(){
     area.innerHTML = html;
   }catch(e){
     console.error(e);
-    area.innerHTML = "全国共有ボーダー掲示板の取得に失敗しました。Firestoreのルールやインデックスを確認してください。";
+    area.innerHTML = "共有ボーダー掲示板の取得に失敗しました。Firestoreのルールやインデックスを確認してください。";
   }
 }
 
@@ -2010,7 +2053,7 @@ if(typeof applyTodayAverageNow !== "function"){
       const rows = await safeRowsByDateAndRank(date, rank);
       const avg = averageRows(rows);
       if(!avg){
-        alert("今日の全国平均がまだありません");
+        alert("今日の共有平均がまだありません");
         return;
       }
       applySharedAverage(avg.zero, avg.plus1, avg.plus2);
@@ -2018,7 +2061,7 @@ if(typeof applyTodayAverageNow !== "function"){
       calc();
     }catch(e){
       console.error(e);
-      alert("全国平均の反映に失敗しました");
+      alert("共有平均の反映に失敗しました");
     }
   }
 }
@@ -2083,7 +2126,7 @@ async function startRealtimeSync(){
 
         const area = document.getElementById("sharedAverageArea");
         if(area){
-          area.innerHTML = `<br><strong>🔄 リアルタイム全国平均</strong><br>
+          area.innerHTML = `<br><strong>🔄 リアルタイム共有平均</strong><br>
             ${date} ${rank}<br>
             投稿数：${avg.count}件<br>
             ±0：${yen(avg.zero)}<br>
@@ -2097,7 +2140,7 @@ async function startRealtimeSync(){
           applySharedAverage(avg.zero, avg.plus1, avg.plus2);
           saveInputs();
         }else if(mode === "ask"){
-          const ok = confirm(`${date} ${rank} の全国平均が更新されました。\n計算ボーダーへ反映しますか？\n\n±0 ${yen(avg.zero)}\n+1 ${yen(avg.plus1)}\n+2 ${yen(avg.plus2)}`);
+          const ok = confirm(`${date} ${rank} の共有平均が更新されました。\n計算ボーダーへ反映しますか？\n\n±0 ${yen(avg.zero)}\n+1 ${yen(avg.plus1)}\n+2 ${yen(avg.plus2)}`);
           if(ok){
             applySharedAverage(avg.zero, avg.plus1, avg.plus2);
             saveInputs();
@@ -2210,6 +2253,120 @@ function copyHistToMainBorders(){
   showSection("main");
   calc();
   setAssistStatus("計算画面へ反映しました。");
+}
+
+
+/* ===== ファミリー共有メーター：見やすい版 ===== */
+let familyMeterUnsubscribe = null;
+let familyMeterLastId = "";
+
+function getFamilyRank(){
+  return document.getElementById("familyRank")?.value || document.getElementById("sharedRank")?.value || document.getElementById("rank")?.value || "S1";
+}
+
+function getFamilyDate(){
+  return document.getElementById("borderDate")?.value || todayISO();
+}
+
+function updateFamilyDisplay(data, statusText){
+  const el = document.getElementById("familyMeterDisplay");
+  if(!el) return;
+
+  if(!data){
+    el.innerHTML = `<div class="rank">今日の共有メーター</div>
+      <div class="main">まだ受信していません</div>
+      <div class="sub">${statusText || "受け取りONで共有メーターを待機します。"}</div>`;
+    return;
+  }
+
+  el.innerHTML = `<div class="rank">${data.date} / ${data.rank}</div>
+    <div class="main">±0 ${yen(data.zero)}<br>+1 ${yen(data.plus1)}<br>+2 ${yen(data.plus2)}</div>
+    <div class="sub">${statusText || "共有メーターを受信しました。"}<br>更新：${data.createdAt ? new Date(data.createdAt).toLocaleTimeString() : ""}</div>
+    <button class="dark" onclick="applySharedAverage(${data.zero},${data.plus1},${data.plus2}); showSection('main'); calc();">このメーターを計算に反映</button>`;
+}
+
+async function publishFamilyMeter(){
+  const rank = getFamilyRank();
+  const date = getFamilyDate();
+  const zero = num("histZero");
+  const plus1 = num("histPlus1");
+  const plus2 = num("histPlus2");
+
+  if(zero <= 0 || plus1 <= 0 || plus2 <= 0){
+    updateFamilyDisplay(null, "±0 / +1 / +2 を入力してから共有してください。");
+    return;
+  }
+
+  if(typeof initFirebase !== "function" || !initFirebase()){
+    updateFamilyDisplay(null, "Firebaseに接続できません。");
+    return;
+  }
+
+  try{
+    const payload = {
+      date, rank, zero, plus1, plus2,
+      createdAt: new Date().toISOString(),
+      deviceHash: typeof simpleHash === "function" ? simpleHash(navigator.userAgent + new Date().toDateString()) : String(Date.now())
+    };
+
+    await db.collection("family_meter").doc(`${date}_${rank}`).set(payload);
+    await db.collection("global_meter").doc(`${date}_${rank}`).set(payload);
+
+    updateFamilyDisplay(payload, "ファミリーに共有しました。");
+  }catch(e){
+    console.error(e);
+    updateFamilyDisplay(null, "共有に失敗しました。Firestoreのルールを確認してください。");
+  }
+}
+
+function startFamilyMeterSync(){
+  const rank = getFamilyRank();
+  const date = getFamilyDate();
+
+  if(typeof initFirebase !== "function" || !initFirebase()){
+    updateFamilyDisplay(null, "Firebaseに接続できません。");
+    return;
+  }
+
+  stopFamilyMeterSync(false);
+  updateFamilyDisplay(null, `${date} ${rank} の共有メーターを待機中...`);
+
+  try{
+    familyMeterUnsubscribe = db.collection("family_meter").doc(`${date}_${rank}`)
+      .onSnapshot(doc => {
+        if(!doc.exists){
+          updateFamilyDisplay(null, `${date} ${rank} はまだ共有されていません。`);
+          return;
+        }
+
+        const data = doc.data();
+        const id = `${data.createdAt}-${data.zero}-${data.plus1}-${data.plus2}`;
+        if(id === familyMeterLastId) return;
+        familyMeterLastId = id;
+
+        updateFamilyDisplay(data, "リアルタイムで受信しました。");
+
+        if(document.getElementById("sharedRank")) document.getElementById("sharedRank").value = data.rank;
+        if(document.getElementById("rank")) document.getElementById("rank").value = data.rank;
+      }, error => {
+        console.error(error);
+        updateFamilyDisplay(null, "受信エラーです。Firestoreのルールを確認してください。");
+      });
+  }catch(e){
+    console.error(e);
+    updateFamilyDisplay(null, "受け取り開始に失敗しました。");
+  }
+}
+
+function stopFamilyMeterSync(showMessage=true){
+  if(familyMeterUnsubscribe){
+    familyMeterUnsubscribe();
+    familyMeterUnsubscribe = null;
+  }
+  familyMeterLastId = "";
+  if(showMessage){
+    updateFamilyDisplay(null, "受け取りを停止しました。");
+  }
 }
 
 renderItems();
