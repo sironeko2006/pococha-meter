@@ -331,8 +331,9 @@ textarea{
       </div>
     </div>
 
-    <label>日付</label>
+    <label>日付（自動で前日表示）</label>
     <input id="borderDate" type="date">
+    <small>前日の日付が自動で入ります。必要な時だけ変更できます。</small>
     <div class="grid3">
       <div><label>±0</label><input id="histZero" type="number" inputmode="numeric"></div>
       <div><label>+1</label><input id="histPlus1" type="number" inputmode="numeric"></div>
@@ -568,6 +569,14 @@ function showSection(name){
 function num(id){return Number(document.getElementById(id)?.value||0)}
 function yen(v){return Math.round(v).toLocaleString()}
 function todayISO(){return new Date().toISOString().slice(0,10)}
+function yesterdayISO(){
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().slice(0,10);
+}
+function defaultBorderDate(){
+  return yesterdayISO();
+}
 
 function loadPresets(){return JSON.parse(localStorage.getItem("rankPresetsMobile")||JSON.stringify(defaultRankPresets))}
 function savePresets(p){localStorage.setItem("rankPresetsMobile",JSON.stringify(p))}
@@ -834,7 +843,7 @@ function simpleHash(text){
 
 function getSharedInput(){
   return {
-    date: document.getElementById("borderDate").value || todayISO(),
+    date: document.getElementById("borderDate").value || defaultBorderDate(),
     rank: document.getElementById("sharedRank").value || document.getElementById("rank").value || "S1",
     zero: num("histZero"),
     plus1: num("histPlus1"),
@@ -883,7 +892,7 @@ function averageRows(rows){
 async function loadSharedAverages(){
   const area = document.getElementById("sharedAverageArea");
   const rank = document.getElementById("sharedRank").value || "S1";
-  const date = document.getElementById("borderDate").value || todayISO();
+  const date = document.getElementById("borderDate").value || defaultBorderDate();
 
   if(!initFirebase()){
     area.innerHTML = "Firebase接続に失敗しました。";
@@ -1158,7 +1167,7 @@ async function loadAverageTrendGraph(){
 
 
 async function getTodayAverageForRank(rank){
-  const date = document.getElementById("borderDate").value || todayISO();
+  const date = document.getElementById("borderDate").value || defaultBorderDate();
 
   if(!initFirebase()){
     return { ok:false, message:"Firebase接続に失敗しました。" };
@@ -1847,7 +1856,7 @@ function saveInputs(){
   localStorage.setItem("inputsMobile",JSON.stringify(d));
 }
 function loadInputs(){
-  document.getElementById("borderDate").value=todayISO();
+  document.getElementById("borderDate").value=defaultBorderDate();
   const s=localStorage.getItem("inputsMobile");
   if(!s){applyRankPreset();return}
   const d=JSON.parse(s);
@@ -1873,7 +1882,7 @@ function safeGetRank(){
 }
 
 function safeGetDate(){
-  return document.getElementById("borderDate")?.value || todayISO();
+  return document.getElementById("borderDate")?.value || defaultBorderDate();
 }
 
 async function safeFirebaseReady(area){
@@ -2141,7 +2150,7 @@ function getFamilyRank(){
 }
 
 function getFamilyDate(){
-  return document.getElementById("borderDate")?.value || todayISO();
+  return document.getElementById("borderDate")?.value || defaultBorderDate();
 }
 
 function updateFamilyDisplay(data, statusText){
