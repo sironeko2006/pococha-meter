@@ -3,37 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ポコチャメーター超シンプル版</title>
+<title>ポコチャメーター ライト版</title>
 <style>
 body{margin:0;background:#f5f5f5;font-family:sans-serif;color:#222}
 header{background:white;padding:16px;border-bottom:1px solid #ddd}
 h1{font-size:22px;margin:0;font-weight:900}
-main{padding:14px;max-width:520px;margin:auto}
+main{padding:14px;max-width:540px;margin:auto}
 .card{background:white;border-radius:20px;padding:16px;margin:14px 0;box-shadow:0 2px 10px #0001}
+h2{font-size:18px;margin:0 0 10px}
 label{display:block;font-weight:900;margin-top:12px}
-input,select{width:100%;height:52px;border:1px solid #ddd;border-radius:14px;padding:0 12px;font-size:22px;font-weight:900;box-sizing:border-box}
+input{width:100%;height:52px;border:1px solid #ddd;border-radius:14px;padding:0 12px;font-size:22px;font-weight:900;box-sizing:border-box}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-button{width:100%;border:0;border-radius:16px;background:#ff6b4a;color:white;font-size:20px;font-weight:900;padding:16px;margin-top:16px}
-.result{background:#fafafa;border:1px solid #eee;border-radius:16px;padding:16px;margin-top:14px;line-height:1.8}
-.big{font-size:32px;font-weight:900;color:#ff6b4a}
+button{width:100%;border:0;border-radius:16px;background:#ff6b4a;color:white;font-size:18px;font-weight:900;padding:14px;margin-top:12px}
+button.dark{background:#333}
+button.gray{background:#eee;color:#333}
+button.blue{background:#2f80ed}
+.result{background:#fafafa;border:1px solid #eee;border-radius:16px;padding:14px;margin-top:14px;line-height:1.8}
+.big{font-size:30px;font-weight:900;color:#ff6b4a}
+.box{background:white;border:1px solid #eee;border-radius:14px;padding:12px;margin-top:10px}
 .bar{height:18px;background:#eee;border-radius:999px;overflow:hidden;margin:10px 0}
 .fill{height:100%;background:#ff6b4a;width:0%}
 .small{color:#666;font-size:13px;line-height:1.6}
+.item-row{display:flex;gap:8px;align-items:center;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:8px;margin-top:8px}
+.item-row span{flex:1;font-weight:900}
+.item-row button{width:auto;margin:0;padding:8px 10px;font-size:13px;background:#999}
 </style>
 </head>
 
 <body>
 <header>
-<h1>ポコチャメーター</h1>
-<div class="small">現在pt・コア人数・±0/+1/+2だけの超シンプル版</div>
+<h1>ポコチャメーター ライト版</h1>
+<div class="small">計算結果・コアボーナス・自由アイテム換算つき</div>
 </header>
 
 <main>
+
 <div class="card">
 <h2>入力</h2>
 
 <label>現在pt</label>
-<input id="point" type="number" inputmode="numeric" placeholder="例：300000">
+<input id="point" type="number" inputmode="numeric" placeholder="例：350000">
 
 <label>コア人数</label>
 <input id="core" type="number" inputmode="numeric" value="0">
@@ -54,14 +64,39 @@ button{width:100%;border:0;border-radius:16px;background:#ff6b4a;color:white;fon
 </div>
 
 <button onclick="calc()">計算する</button>
+<button class="dark" onclick="copyResult()">結果コピー</button>
+<button class="gray" onclick="resetAll()">リセット</button>
 
 <div id="result" class="result">
 まだ計算していません。
 </div>
 </div>
+
+<div class="card">
+<h2>🎁 アイテム設定</h2>
+<div class="grid2">
+<div>
+<label>アイテム名</label>
+<input id="itemName" type="text" placeholder="花火">
+</div>
+<div>
+<label>コイン数</label>
+<input id="itemCoin" type="number" inputmode="numeric" placeholder="1080">
+</div>
+</div>
+<button class="blue" onclick="addItem()">アイテム追加</button>
+<div id="itemList"></div>
+</div>
+
 </main>
 
 <script>
+const defaultItems=[
+  {name:"花火",coin:1080},
+  {name:"小馬車",coin:3333},
+  {name:"馬車",coin:5555}
+];
+
 function yen(n){
   return Math.round(Number(n||0)).toLocaleString();
 }
@@ -70,82 +105,224 @@ function num(id){
   return Number(document.getElementById(id).value || 0);
 }
 
-function coreRate(core){
-  if(core >= 500) return 1.22;
-  if(core >= 400) return 1.21;
-  if(core >= 300) return 1.20;
-  if(core >= 250) return 1.19;
-  if(core >= 200) return 1.18;
-  if(core >= 150) return 1.17;
-  if(core >= 100) return 1.16;
-  if(core >= 90) return 1.15;
-  if(core >= 80) return 1.14;
-  if(core >= 70) return 1.13;
-  if(core >= 60) return 1.12;
-  if(core >= 50) return 1.11;
-  if(core >= 45) return 1.10;
-  if(core >= 40) return 1.09;
-  if(core >= 35) return 1.08;
-  if(core >= 30) return 1.07;
-  if(core >= 25) return 1.06;
-  if(core >= 20) return 1.05;
-  if(core >= 15) return 1.04;
-  if(core >= 10) return 1.03;
-  if(core >= 5) return 1.02;
-  if(core >= 2) return 1.01;
-  return 1.00;
+function saveInputs(){
+  const ids=["point","core","zero","plus1","plus2"];
+  const data={};
+  ids.forEach(id=>data[id]=document.getElementById(id).value);
+  localStorage.setItem("pocochaLightInputs",JSON.stringify(data));
 }
 
-function targetName(point,z,p1,p2){
-  if(point >= p2) return "+2圏内";
-  if(point >= p1) return "+1圏内";
-  if(point >= z) return "±0圏内";
+function loadInputs(){
+  const data=JSON.parse(localStorage.getItem("pocochaLightInputs")||"{}");
+  Object.keys(data).forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.value=data[id];
+  });
+}
+
+function loadItems(){
+  return JSON.parse(localStorage.getItem("pocochaItems")||JSON.stringify(defaultItems));
+}
+
+function saveItems(items){
+  localStorage.setItem("pocochaItems",JSON.stringify(items));
+}
+
+function renderItems(){
+  const items=loadItems();
+  const area=document.getElementById("itemList");
+
+  if(items.length===0){
+    area.innerHTML='<div class="result">アイテムがありません。</div>';
+    return;
+  }
+
+  area.innerHTML=items.map((it,i)=>`
+    <div class="item-row">
+      <span>${it.name}<br><small>${yen(it.coin)}コイン</small></span>
+      <button onclick="deleteItem(${i})">削除</button>
+    </div>
+  `).join("");
+}
+
+function addItem(){
+  const name=document.getElementById("itemName").value.trim();
+  const coin=Number(document.getElementById("itemCoin").value||0);
+
+  if(!name || coin<=0){
+    alert("アイテム名とコイン数を入力してね");
+    return;
+  }
+
+  const items=loadItems();
+  items.push({name,coin});
+  saveItems(items);
+
+  document.getElementById("itemName").value="";
+  document.getElementById("itemCoin").value="";
+
+  renderItems();
+}
+
+function deleteItem(i){
+  const items=loadItems();
+  items.splice(i,1);
+  saveItems(items);
+  renderItems();
+}
+
+function coreRules(){
+  return [
+    {min:0,rate:1.00},
+    {min:2,rate:1.01},
+    {min:5,rate:1.02},
+    {min:10,rate:1.03},
+    {min:15,rate:1.04},
+    {min:20,rate:1.05},
+    {min:25,rate:1.06},
+    {min:30,rate:1.07},
+    {min:35,rate:1.08},
+    {min:40,rate:1.09},
+    {min:45,rate:1.10},
+    {min:50,rate:1.11},
+    {min:60,rate:1.12},
+    {min:70,rate:1.13},
+    {min:80,rate:1.14},
+    {min:90,rate:1.15},
+    {min:100,rate:1.16},
+    {min:150,rate:1.17},
+    {min:200,rate:1.18},
+    {min:250,rate:1.19},
+    {min:300,rate:1.20},
+    {min:400,rate:1.21},
+    {min:500,rate:1.22}
+  ];
+}
+
+function getCoreInfo(core){
+  const rules=coreRules();
+  let current=rules[0];
+  let next=null;
+
+  for(let i=0;i<rules.length;i++){
+    if(core>=rules[i].min) current=rules[i];
+    if(core<rules[i].min){
+      next=rules[i];
+      break;
+    }
+  }
+
+  return {
+    rate: current.rate,
+    percent: Math.round(current.rate*100),
+    bonus: Math.round((current.rate-1)*100),
+    nextMin: next ? next.min : null,
+    nextPercent: next ? Math.round(next.rate*100) : null,
+    needNext: next ? next.min-core : 0
+  };
+}
+
+function zone(point,z,p1,p2){
+  if(point>=p2)return "+2圏内";
+  if(point>=p1)return "+1圏内";
+  if(point>=z)return "±0圏内";
   return "±0未満";
 }
 
-function percent(point,target){
-  if(target <= 0) return 0;
-  return Math.max(0, Math.min(100, Math.round(point / target * 100)));
+function meterPercent(point,target){
+  if(target<=0)return 0;
+  return Math.max(0,Math.min(100,Math.round(point/target*100)));
 }
 
-function needLine(name, point, target, ptPerCoin){
-  const needPt = Math.max(0, target - point);
-  const needCoin = Math.ceil(needPt / ptPerCoin);
+function itemBox(coin){
+  const items=loadItems();
+
+  if(items.length===0){
+    return "アイテム未設定";
+  }
+
+  return items.map(it=>{
+    const count=Math.ceil(coin / it.coin);
+    return `${it.name}：${yen(count)}個`;
+  }).join("<br>");
+}
+
+function targetBox(name,point,target,ptPerCoin){
+  const needPt=Math.max(0,target-point);
+  const needCoin=Math.ceil(needPt/ptPerCoin);
+  const pct=meterPercent(point,target);
+
   return `
-    <strong>${name}まで</strong><br>
-    必要pt：${yen(needPt)}pt<br>
-    必要エール数：約 <strong>${yen(needCoin)}</strong><br>
-    メーター：${percent(point,target)}%
-    <div class="bar"><div class="fill" style="width:${percent(point,target)}%"></div></div>
+    <div class="box">
+      <strong>${name}まで</strong><br>
+      必要pt：${yen(needPt)}pt<br>
+      必要エール数：約 <strong>${yen(needCoin)}</strong><br>
+      メーター：${pct}%
+      <div class="bar"><div class="fill" style="width:${pct}%"></div></div>
+      <strong>🎁 アイテム換算</strong><br>
+      ${itemBox(needCoin)}
+    </div>
   `;
 }
 
 function calc(){
-  const point = num("point");
-  const core = num("core");
-  const z = num("zero");
-  const p1 = num("plus1");
-  const p2 = num("plus2");
+  const point=num("point");
+  const core=num("core");
+  const z=num("zero");
+  const p1=num("plus1");
+  const p2=num("plus2");
 
-  if(point <= 0 || z <= 0 || p1 <= 0 || p2 <= 0){
-    document.getElementById("result").innerHTML = "現在pt と ±0 / +1 / +2 を入力してください。";
+  if(point<=0 || z<=0 || p1<=0 || p2<=0){
+    document.getElementById("result").innerHTML="現在pt と ±0 / +1 / +2 を入力してください。";
     return;
   }
 
-  const rate = coreRate(core);
-  const ptPerCoin = 4 * rate;
+  const coreInfo=getCoreInfo(core);
+  const ptPerCoin=4*coreInfo.rate;
 
-  document.getElementById("result").innerHTML = `
-    <div class="big">${targetName(point,z,p1,p2)}</div>
-    コア人数：${core}人<br>
-    コアボーナス：${Math.round(rate * 100)}%<br>
-    1エール：約 ${ptPerCoin.toFixed(2)}pt<br><br>
+  const nextText = coreInfo.nextMin
+    ? `次の倍率：${coreInfo.nextMin}人 → ${coreInfo.nextPercent}%<br>あと <strong>${coreInfo.needNext}人</strong>`
+    : `最高倍率です`;
 
-    ${needLine("±0", point, z, ptPerCoin)}
-    ${needLine("+1", point, p1, ptPerCoin)}
-    ${needLine("+2", point, p2, ptPerCoin)}
+  document.getElementById("result").innerHTML=`
+    <h2>📊 計算結果</h2>
+    <div class="big">${zone(point,z,p1,p2)}</div>
+    現在pt：${yen(point)}pt<br>
+    1エール：約 ${ptPerCoin.toFixed(2)}pt<br>
+
+    ${targetBox("±0",point,z,ptPerCoin)}
+    ${targetBox("+1",point,p1,ptPerCoin)}
+    ${targetBox("+2",point,p2,ptPerCoin)}
+
+    <div class="box">
+      <h2>⭐ コアボーナス</h2>
+      コア人数：<strong>${core}人</strong><br>
+      現在倍率：<strong>${coreInfo.percent}%</strong><br>
+      ボーナス：<strong>+${coreInfo.bonus}%</strong><br>
+      ${nextText}
+    </div>
   `;
+
+  saveInputs();
 }
+
+function copyResult(){
+  const text=document.getElementById("result").innerText;
+  navigator.clipboard.writeText(text)
+    .then(()=>alert("コピーしました！"))
+    .catch(()=>alert("コピーできませんでした"));
+}
+
+function resetAll(){
+  if(!confirm("入力をリセットしますか？"))return;
+  ["point","core","zero","plus1","plus2"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("core").value=0;
+  document.getElementById("result").innerHTML="まだ計算していません。";
+  localStorage.removeItem("pocochaLightInputs");
+}
+
+loadInputs();
+renderItems();
 </script>
 </body>
 </html>
