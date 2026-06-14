@@ -250,6 +250,18 @@ textarea{
 .family-actions button{margin-top:0}
 .family-guide{background:#f7fbff;border:1px solid #d8e8ff;border-radius:14px;padding:10px;font-size:13px;line-height:1.7;color:var(--muted);margin-top:10px}
 
+
+.mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.mode-tabs button{margin-top:0}
+.mode-box{display:none}
+.mode-box.active{display:block}
+.simple-hero{background:linear-gradient(180deg,#fff7f3,#fff);border:1px solid #ffd6c8;border-radius:18px;padding:14px;margin:12px 0}
+.simple-hero h2{font-size:18px}
+.big-meter{background:#fff;border:1px solid #eee;border-radius:16px;padding:14px;margin-top:10px}
+.big-meter .main{font-size:24px;font-weight:900;color:var(--main);line-height:1.5}
+.big-meter .sub{font-size:13px;color:var(--muted);line-height:1.6}
+.simple-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+
 </style>
 
 <link rel="manifest" href="./manifest.json">
@@ -266,10 +278,67 @@ textarea{
   <div class="subtitle">ファミリー内共有に特化 / 直近10日ベースで集計 / 共有・平均集計・コアボーナス・馬車/花火換算</div>
 </header>
 
+
 <main>
 <section id="sec-main" class="section active">
+
+  <div class="simple-hero">
+    <h2>👪 ファミリー共有メーター</h2>
+    <small>
+      入力係がメーターを共有すると、見るだけの人の画面にも反映されます。<br>
+      日付は自動で前日表示になります。
+    </small>
+
+    <label>日付（自動で前日表示）</label>
+    <input id="borderDate" type="date">
+    <small>必要な時だけ変更できます。</small>
+
+    <label>ランク</label>
+    <select id="familyRank">
+      <option value="S1">S1</option><option value="S2">S2</option><option value="S3">S3</option>
+      <option value="S4">S4</option><option value="S5">S5</option><option value="S6">S6</option>
+    </select>
+
+    <div class="big-meter" id="familyMeterDisplay">
+      <div class="main">まだ受信していません</div>
+      <div class="sub">「見るだけモード」で受け取りONを押すと共有メーターを受信します。</div>
+    </div>
+  </div>
+
+  <div class="mode-tabs">
+    <button class="blue" onclick="showMode('input')">入力係モード</button>
+    <button class="dark" onclick="showMode('view')">見るだけモード</button>
+  </div>
+
+  <div id="mode-input" class="mode-box active">
+    <div class="card">
+      <h2>✍️ 入力係モード</h2>
+      <small>ポコチャのメーターを見ながら、±0/+1/+2を入力してファミリーに共有します。</small>
+
+      <div class="simple-grid">
+        <div><label>±0</label><input id="histZero" type="number" inputmode="numeric"></div>
+        <div><label>+1</label><input id="histPlus1" type="number" inputmode="numeric"></div>
+        <div><label>+2</label><input id="histPlus2" type="number" inputmode="numeric"></div>
+      </div>
+
+      <button class="blue" onclick="publishFamilyMeter()">ファミリーに共有</button>
+      <button class="light" onclick="copyHistToMainSimple()">計算にも反映</button>
+    </div>
+  </div>
+
+  <div id="mode-view" class="mode-box">
+    <div class="card">
+      <h2>👀 見るだけモード</h2>
+      <small>入力係が共有したメーターをリアルタイムで受け取ります。</small>
+
+      <button class="blue" onclick="startFamilyMeterSync()">共有メーター受け取りON</button>
+      <button class="light" onclick="stopFamilyMeterSync()">受け取りOFF</button>
+      <button class="dark" onclick="applyFamilyDisplayToCalc()">受信メーターを計算に反映</button>
+    </div>
+  </div>
+
   <div class="card">
-    <h2>⚡ クイック入力</h2>
+    <h2>⚡ 簡単計算</h2>
     <label>現在pt</label>
     <input id="point" type="number" inputmode="numeric" placeholder="例：4200000">
 
@@ -282,11 +351,6 @@ textarea{
       <div><label>+2</label><input id="plus2" type="number" inputmode="numeric"></div>
     </div>
 
-    <div class="grid2">
-      <div><label>残り分</label><input id="quickMinutes" type="number" inputmode="numeric" placeholder="例：90"></div>
-      <div><label>締め時間</label><input id="deadline" type="time" value="23:59"></div>
-    </div>
-
     <button onclick="calc()">計算する</button>
     <button class="dark" onclick="copySummary()">結果をコピー</button>
   </div>
@@ -294,175 +358,12 @@ textarea{
   <div class="card result" id="dashboard">
     数値を入力して「計算する」を押してください。
   </div>
-</section>
 
-<section id="sec-history" class="section">
-  <div class="card">
-    <h2>📊 前日ボーダー履歴</h2>
-
-    <div class="family-hero">
-      <div class="family-title">👪 ファミリー共有メーター</div>
-      <small>
-        ファミリー内で今日のメーターを共有するためのシンプル画面です。<br>
-        入力係が投稿すると、見る人の画面にも反映されます。
-      </small>
-
-      <div class="family-meter-big" id="familyMeterDisplay">
-        <div class="rank">今日の共有メーター</div>
-        <div class="main">まだ受信していません</div>
-        <div class="sub">下の「受け取りON」を押すと共有メーターを受信します。</div>
-      </div>
-
-      <label>ファミリー共有ランク</label>
-      <select id="familyRank">
-        <option value="S1">S1</option><option value="S2">S2</option><option value="S3">S3</option>
-        <option value="S4">S4</option><option value="S5">S5</option><option value="S6">S6</option>
-      </select>
-
-      <div class="family-actions">
-        <button class="blue" onclick="publishFamilyMeter()">入力したメーターをファミリー共有</button>
-        <button class="dark" onclick="startFamilyMeterSync()">共有メーター受け取りON</button>
-        <button class="light" onclick="stopFamilyMeterSync()">受け取りOFF</button>
-      </div>
-
-      <div class="family-guide">
-        使い方：①入力係が ±0/+1/+2 を入力 → ②「ファミリー共有」 → ③見る人は「受け取りON」<br>
-        ※ポコチャ公式アプリから自動取得はしません。ファミリー内の手入力共有です。
-      </div>
-    </div>
-
-    <label>日付（自動で前日表示）</label>
-    <input id="borderDate" type="date">
-    <small>前日の日付が自動で入ります。必要な時だけ変更できます。</small>
-    <div class="grid3">
-      <div><label>±0</label><input id="histZero" type="number" inputmode="numeric"></div>
-      <div><label>+1</label><input id="histPlus1" type="number" inputmode="numeric"></div>
-      <div><label>+2</label><input id="histPlus2" type="number" inputmode="numeric"></div>
-    </div>
-    <label>自分の最終pt 任意</label>
-    <input id="myFinalPoint" type="number" inputmode="numeric">
-
-
-    <button onclick="saveBorderHistory()">保存</button>
-    <button class="blue" onclick="saveAndSubmitSharedBorder()">保存して共有にも投稿</button>
-    <button class="blue" onclick="predictBorders()">直近平均を計算</button>
-    <button class="dark" onclick="applyPredictedBorders()">平均ボーダーを反映</button>
-    <button class="light" onclick="downloadBorderCSV()">CSV出力</button>
-
-    <hr style="border:0;border-top:1px solid var(--line);margin:16px 0;">
-    <h2>🌐 共有ボーダー</h2>
-    <small>
-      日付・ランク帯・±0/+1/+2を匿名で共有します。<br>
-      個人名やポコチャIDは保存しません。
-    </small>
-
-    <label>共有するランク帯</label>
-    <select id="sharedRank">
-      <option value="S1">S1</option><option value="S2">S2</option><option value="S3">S3</option>
-      <option value="S4">S4</option><option value="S5">S5</option><option value="S6">S6</option>
-    </select>
-
-    <div class="tool-section">
-      <h3>🌐 共有</h3>
-      <div class="tool-grid">
-        <button class="blue" onclick="submitSharedBorder()">共有に投稿</button>
-        <button class="dark" onclick="loadSharedAverages()">今日の共有平均</button>
-        <button class="light" onclick="loadRecentSharedAverages()">直近10日平均</button>
-        <button class="blue" onclick="loadSharedBoard()">共有ボーダー掲示板</button>
-      </div>
-      <div class="compact-note">投稿・平均確認・S1〜S6掲示板をまとめました。</div>
-    </div>
-
-    
-    
-    <div class="tool-section">
-      <h3>👪 ファミリーファミリー反映</h3>
-      <small>
-        誰かが投稿した最新メーターを、同じランクの利用者にリアルタイム共有します。<br>
-        強制反映ではなく、ONにした人だけ反映されます。
-      </small>
-
-      <label>ファミリー反映モード</label>
-      <select id="globalMeterMode">
-        <option value="display">表示だけ更新</option>
-        <option value="apply">計算画面にも自動反映</option>
-        <option value="ask">確認してから反映</option>
-      </select>
-
-      <div class="tool-grid">
-        <button class="blue" onclick="publishGlobalMeter()">今の履歴入力を全体に反映</button>
-        <button class="blue" onclick="startGlobalMeterSync()">ファミリー反映を受け取る ON</button>
-        <button class="light" onclick="stopGlobalMeterSync()">ファミリー反映 OFF</button>
-      </div>
-
-      <div id="globalMeterStatus" class="global-meter-box">
-        <div class="global-meter-title">ファミリー反映：OFF</div>
-        <div class="global-meter-mini">ONにすると、誰かが投稿した最新メーターがリアルタイムで表示されます。</div>
-      </div>
-    </div>
-
-<div class="tool-section">
-      <h3>🔄 リアルタイム同期</h3>
-      <div class="tool-grid">
-        <button class="blue" onclick="startRealtimeSync()">リアルタイム同期 ON</button>
-        <button class="light" onclick="stopRealtimeSync()">リアルタイム同期 OFF</button>
-      </div>
-      <label>同期モード</label>
-      <select id="realtimeApplyMode">
-        <option value="display">表示だけ自動更新</option>
-        <option value="apply">計算ボーダーにも自動反映</option>
-        <option value="ask">反映前に確認</option>
-      </select>
-      <div id="realtimeStatus" class="realtime-box off">
-        <div class="realtime-title">リアルタイム同期：OFF</div>
-        <div class="realtime-small">ONにすると、誰かが共有に投稿した時に平均が自動更新されます。</div>
-      </div>
-    </div>
-
-
-    <div class="tool-section">
-      <h3>🤖 AI予測</h3>
-      <div class="tool-grid">
-        <button class="blue" onclick="predictTomorrowBorder()">明日のAI予測</button>
-        <button class="blue" onclick="loadAiPredictionCenter()">AI予測センター</button>
-        <button class="dark" onclick="applyTodayAverageNow()">今日の共有平均を計算へ反映</button>
-      </div>
-      <div class="compact-note">直近10日の共有データから予測・反映します。</div>
-    </div>
-
-    <div id="sharedAverageArea" class="result"></div>
-    <div id="yesterdayCompareArea" class="result"></div>
-    <canvas id="sharedTrendChart" width="520" height="240"></canvas>
-    <div id="sharedTrendArea" class="result"></div>
-    <div id="predictionArea" class="result"></div>
-    <div id="riseAlertArea" class="result"></div>
-    <div id="sharedBoardArea" class="result"></div>
-    <div id="aiPredictionCenterArea" class="result"></div>
-    <div id="borderTrendCenterArea" class="result"></div>
-
-    <button class="blue" onclick="loadTodayAllRankAverages()">S1〜S6 今日の平均一覧</button>
-    <button class="light" onclick="loadRecentAllRankAverages()">S1〜S6 直近10日平均一覧</button>
-
-    <div id="firebaseStatus" class="result"></div>
-    <div id="nationalDashboardArea" class="result"></div>
-
-
-    <div id="borderAnalysis" class="result"></div>
-    <canvas id="borderChart" width="520" height="220"></canvas>
-    <div id="borderHistoryArea"></div>
-  </div>
 </section>
 
 <section id="sec-settings" class="section">
   <div class="card">
-    <h2>⚙️ ランク・コア設定</h2>
-    <label>ランク帯</label>
-    <select id="rank" onchange="applyRankPreset()">
-      <option value="S1">S1</option><option value="S2">S2</option><option value="S3">S3</option>
-      <option value="S4">S4</option><option value="S5">S5</option><option value="S6">S6</option>
-      <option value="custom">手入力</option>
-    </select>
-    <button class="dark" onclick="saveRankPreset()">現在のボーダーをこのランクに保存</button>
+    <h2>⚙️ 設定</h2>
 
     <label>1コインあたりの基礎pt</label>
     <input id="base" type="number" value="4" step="0.1">
@@ -472,62 +373,27 @@ textarea{
 
     <button class="blue" onclick="showCoreBonus()">コアボーナス確認</button>
     <div id="coreBonusResult" class="result"></div>
-
-    <h2 style="margin-top:18px">コアボーナス表</h2>
-    <div id="coreTableArea"></div>
   </div>
 
   <div class="card">
     <h2>🎁 アイテム一覧</h2>
     <label>メイン表示アイテム</label>
     <select id="selectedItem"></select>
-    <div class="grid2">
-      <div><label>アイテム名</label><input id="newItemName" placeholder="例：ロケット"></div>
-      <div><label>コイン数</label><input id="newItemCoin" type="number" inputmode="numeric"></div>
-    </div>
-    <button class="dark" onclick="addItem()">アイテム追加</button>
-    <button class="light" onclick="resetItems()">初期アイテムに戻す</button>
     <div id="itemList"></div>
-  </div>
-
-
-  <div class="card">
-    <h2>✨ 共有平均の自動反映</h2>
-    <small>
-      アプリを開いた時に、選択したランクの「今日の共有平均」を自動で計算画面へ入れます。<br>
-      投稿がまだない場合は何もしません。
-    </small>
-
-    <label>自動反映するランク</label>
-    <select id="autoApplyRank">
-      <option value="S1">S1</option><option value="S2">S2</option><option value="S3">S3</option>
-      <option value="S4">S4</option><option value="S5">S5</option><option value="S6">S6</option>
-    </select>
-
-    <label>自動反映</label>
-    <select id="autoApplyMode">
-      <option value="off">OFF</option>
-      <option value="on">ON：起動時に今日の平均を反映</option>
-      <option value="ask">確認してから反映</option>
-    </select>
-
-    <button class="blue" onclick="applyTodayAverageNow()">今すぐ今日の共有平均を反映</button>
-    <div id="autoApplyStatus" class="result"></div>
   </div>
 
   <div class="card">
     <h2>🏠 ホーム画面に追加</h2>
-    <small>iPhone：Safariで開く → 共有ボタン → ホーム画面に追加<br>
-    Android：Chromeで開く → メニュー → ホーム画面に追加</small>
+    <small>Android：Chromeで開く → メニュー → ホーム画面に追加</small>
   </div>
 </section>
 </main>
 
 <div class="bottom-nav">
-  <button onclick="showSection('main')">計算</button>
-  <button onclick="showSection('history')">履歴</button>
+  <button onclick="showSection('main')">共有</button>
   <button onclick="showSection('settings')">設定</button>
 </div>
+
 
 
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
@@ -758,6 +624,7 @@ function saveBorderHistory(){
 }
 function avg(list,key){const vals=list.map(x=>x[key]).filter(v=>v>0);return vals.reduce((a,b)=>a+b,0)/(vals.length||1)}
 function predictBorders(){
+  if(!document.getElementById("borderAnalysis")) return;
   const list=loadBorderHistory();
   if(list.length===0){document.getElementById("borderAnalysis").innerHTML="履歴がありません。";return}
   const last7=list.slice(-7);
@@ -776,8 +643,9 @@ function applyPredictedBorders(){
   calc();
 }
 function renderBorderHistory(){
-  const list=loadBorderHistory();
   const area=document.getElementById("borderHistoryArea");
+  if(!area) return;
+  const list=loadBorderHistory();
   if(list.length===0){area.innerHTML="<small>履歴はまだありません。</small>";drawBorderChart([]);return}
   let html="<table><tr><th>日付</th><th>±0</th><th>+1</th><th>+2</th></tr>";
   list.slice().reverse().forEach(x=>html+=`<tr><td>${x.date}</td><td>${yen(x.zero)}</td><td>${yen(x.plus1)}</td><td>${yen(x.plus2)}</td></tr>`);
@@ -1856,7 +1724,7 @@ function saveInputs(){
   localStorage.setItem("inputsMobile",JSON.stringify(d));
 }
 function loadInputs(){
-  document.getElementById("borderDate").value=defaultBorderDate();
+  if(document.getElementById("borderDate")) document.getElementById("borderDate").value=defaultBorderDate();
   const s=localStorage.getItem("inputsMobile");
   if(!s){applyRankPreset();return}
   const d=JSON.parse(s);
@@ -2154,6 +2022,7 @@ function getFamilyDate(){
 }
 
 function updateFamilyDisplay(data, statusText){
+  if(data) latestFamilyMeter = data;
   const el = document.getElementById("familyMeterDisplay");
   if(!el) return;
 
@@ -2252,6 +2121,43 @@ function stopFamilyMeterSync(showMessage=true){
   if(showMessage){
     updateFamilyDisplay(null, "受け取りを停止しました。");
   }
+}
+
+
+/* ===== ファミリー簡単トップ版 ===== */
+let latestFamilyMeter = null;
+
+function showMode(mode){
+  document.querySelectorAll(".mode-box").forEach(el=>el.classList.remove("active"));
+  const target = document.getElementById("mode-" + mode);
+  if(target) target.classList.add("active");
+}
+
+function copyHistToMainSimple(){
+  const z = num("histZero");
+  const p1 = num("histPlus1");
+  const p2 = num("histPlus2");
+  if(z<=0 || p1<=0 || p2<=0){
+    alert("±0/+1/+2を入力してください");
+    return;
+  }
+  document.getElementById("zero").value = z;
+  document.getElementById("plus1").value = p1;
+  document.getElementById("plus2").value = p2;
+  saveInputs();
+  calc();
+}
+
+function applyFamilyDisplayToCalc(){
+  if(!latestFamilyMeter){
+    alert("まだ共有メーターを受信していません");
+    return;
+  }
+  document.getElementById("zero").value = latestFamilyMeter.zero;
+  document.getElementById("plus1").value = latestFamilyMeter.plus1;
+  document.getElementById("plus2").value = latestFamilyMeter.plus2;
+  saveInputs();
+  calc();
 }
 
 renderItems();
