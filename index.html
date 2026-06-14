@@ -262,6 +262,14 @@ textarea{
 .big-meter .sub{font-size:13px;color:var(--muted);line-height:1.6}
 .simple-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 
+
+.average-core-card{background:#f7fbff;border:1px solid #d8e8ff;border-radius:18px;padding:14px;margin:12px 0}
+.average-core-card h2{font-size:17px;margin-bottom:8px}
+.average-big{background:#fff;border:1px solid #eee;border-radius:16px;padding:12px;margin-top:10px}
+.average-big .main{font-size:20px;font-weight:900;line-height:1.6;color:var(--blue)}
+.core-percent-box{background:#fff;border:1px solid #eee;border-radius:16px;padding:12px;margin-top:10px}
+.core-percent-box .percent{font-size:26px;font-weight:900;color:var(--main)}
+
 </style>
 
 <link rel="manifest" href="./manifest.json">
@@ -337,6 +345,35 @@ textarea{
     </div>
   </div>
 
+  
+  <div class="average-core-card">
+    <h2>📊 平均メーター</h2>
+    <small>ファミリーで共有された直近10日分から平均メーターを表示します。</small>
+
+    <button class="blue" onclick="loadFamilyAverageMeter()">直近10日平均を見る</button>
+
+    <div class="average-big" id="familyAverageDisplay">
+      <div class="main">まだ平均を表示していません</div>
+      <div class="sub">ボタンを押すと、選択ランクの直近10日平均を表示します。</div>
+    </div>
+  </div>
+
+  <div class="average-core-card">
+    <h2>⭐ コアボーナス</h2>
+    <label>コアファン人数</label>
+    <input id="coreCount" type="number" inputmode="numeric" value="0">
+
+    <label>1コインあたりの基礎pt</label>
+    <input id="base" type="number" value="4" step="0.1">
+
+    <button class="blue" onclick="showFamilyCorePercent()">コアボーナスを見る</button>
+
+    <div class="core-percent-box" id="familyCorePercent">
+      <div class="percent">100%</div>
+      <div class="sub">コア人数を入力すると、ボーナス％と1コインptを表示します。</div>
+    </div>
+  </div>
+
   <div class="card">
     <h2>⚡ 簡単計算</h2>
     <label>現在pt</label>
@@ -362,18 +399,7 @@ textarea{
 </section>
 
 <section id="sec-settings" class="section">
-  <div class="card">
-    <h2>⚙️ 設定</h2>
 
-    <label>1コインあたりの基礎pt</label>
-    <input id="base" type="number" value="4" step="0.1">
-
-    <label>コアファン人数</label>
-    <input id="coreCount" type="number" inputmode="numeric" value="0">
-
-    <button class="blue" onclick="showCoreBonus()">コアボーナス確認</button>
-    <div id="coreBonusResult" class="result"></div>
-  </div>
 
   <div class="card">
     <h2>🎁 アイテム一覧</h2>
@@ -483,7 +509,7 @@ function showCoreBonus(){
   const c=num("coreCount");
   const rate=autoCoreBonus(c);
   const base=num("base");
-  document.getElementById("coreBonusResult").innerHTML=
+  if(document.getElementById("coreBonusResult")) document.getElementById("coreBonusResult").innerHTML=
     `<br>コア人数：<strong>${c}人</strong><br>
     ボーナス：<strong>${Math.round(rate*100)}%</strong>（${Math.round((rate-1)*100)}%UP）<br>
     1コイン換算：約 <strong>${(base*rate).toFixed(2)}pt</strong>`;
@@ -2158,6 +2184,66 @@ function applyFamilyDisplayToCalc(){
   document.getElementById("plus2").value = latestFamilyMeter.plus2;
   saveInputs();
   calc();
+}
+
+
+/* ===== 平均メーター＋コア％表示 ===== */
+async function loadFamilyAverageMeter(){
+  const area = document.getElementById("familyAverageDisplay");
+  const rank = document.getElementById("familyRank")?.value || "S1";
+
+  if(typeof initFirebase !== "function" || !initFirebase()){
+    area.innerHTML = `<div class="main">Firebaseに接続できません</div>`;
+    return;
+  }
+
+  area.innerHTML = `<div class="main">平均を読み込み中...</div>`;
+
+  try{
+    const fromDate = getDateNDaysAgo(9);
+    const snap = await db.collection("family_meter")
+      .where("rank","==",rank)
+      .where("date",">=",fromDate)
+      .get();
+
+    const rows = snap.docs.map(doc=>doc.data());
+    const avg = averageRows(rows);
+
+    if(!avg){
+      area.innerHTML = `<div class="main">投稿データなし</div><div class="sub">${rank} の直近10日共有データがまだありません。</div>`;
+      return;
+    }
+
+    area.innerHTML = `<div class="main">
+      ${rank} 直近10日平均<br>
+      ±0 ${yen(avg.zero)}<br>
+      +1 ${yen(avg.plus1)}<br>
+      +2 ${yen(avg.plus2)}
+    </div>
+    <div class="sub">投稿数：${avg.count}件</div>
+    <button class="dark" onclick="applySharedAverage(${avg.zero},${avg.plus1},${avg.plus2}); calc();">この平均を計算に反映</button>`;
+  }catch(e){
+    console.error(e);
+    area.innerHTML = `<div class="main">平均取得エラー</div><div class="sub">Firestoreのルールを確認してください。</div>`;
+  }
+}
+
+function showFamilyCorePercent(){
+  const c = num("coreCount");
+  const base = num("base");
+  const rate = autoCoreBonus(c);
+  const percent = Math.round(rate * 100);
+  const point = (base * rate).toFixed(2);
+
+  const area = document.getElementById("familyCorePercent");
+  if(!area) return;
+
+  area.innerHTML = `<div class="percent">${percent}%</div>
+    <div class="sub">
+      コア人数：${c}人<br>
+      ボーナス：${Math.round((rate - 1) * 100)}%UP<br>
+      1コイン：約 ${point}pt
+    </div>`;
 }
 
 renderItems();
