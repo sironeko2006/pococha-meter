@@ -270,6 +270,11 @@ textarea{
 .core-percent-box{background:#fff;border:1px solid #eee;border-radius:16px;padding:12px;margin-top:10px}
 .core-percent-box .percent{font-size:26px;font-weight:900;color:var(--main)}
 
+
+.meter-history-card{background:#fff;border:1px solid #eee;border-radius:18px;padding:14px;margin:12px 0}
+.history-mini{font-size:13px;color:var(--muted);line-height:1.6}
+.history-table-wrap{overflow-x:auto;margin-top:8px}
+
 </style>
 
 <link rel="manifest" href="./manifest.json">
@@ -346,6 +351,17 @@ textarea{
   </div>
 
   
+  
+  <div class="meter-history-card">
+    <h2>📝 メーター履歴</h2>
+    <small>ファミリー共有したメーター履歴を保存して表示します。</small>
+
+    <button class="blue" onclick="loadFamilyMeterHistory()">履歴を表示</button>
+    <button class="light" onclick="clearLocalFamilyHistory()">端末内履歴をクリア</button>
+
+    <div id="familyHistoryArea" class="history-mini">まだ履歴を表示していません。</div>
+  </div>
+
   <div class="average-core-card">
     <h2>📊 平均メーター</h2>
     <small>ファミリーで共有された直近10日分から平均メーターを表示します。</small>
@@ -2092,7 +2108,9 @@ async function publishFamilyMeter(){
     await db.collection("family_meter").doc(`${date}_${rank}`).set(payload);
     await db.collection("global_meter").doc(`${date}_${rank}`).set(payload);
 
+    addLocalFamilyHistory(payload);
     updateFamilyDisplay(payload, "ファミリーに共有しました。");
+    loadFamilyMeterHistory();
   }catch(e){
     console.error(e);
     updateFamilyDisplay(null, "共有に失敗しました。Firestoreのルールを確認してください。");
@@ -2124,6 +2142,7 @@ function startFamilyMeterSync(){
         if(id === familyMeterLastId) return;
         familyMeterLastId = id;
 
+        addLocalFamilyHistory(data);
         updateFamilyDisplay(data, "リアルタイムで受信しました。");
 
         if(document.getElementById("sharedRank")) document.getElementById("sharedRank").value = data.rank;
