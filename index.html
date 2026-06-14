@@ -3,23 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ポコチャメーター 全国共有ボーダー版</title>
+<title>ポコチャメーター シンプル共有版</title>
 <style>
 :root{--main:#ff6048;--blue:#2f80ed;--bg:#f5f5f5;--card:#fff;--text:#222;--muted:#666;--line:#e8e8e8}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding-bottom:96px}
 header{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line);padding:16px 18px}
-h1{font-size:24px;margin:0;font-weight:900}.subtitle{font-size:14px;color:var(--muted);margin-top:4px;line-height:1.4}
+h1{font-size:24px;margin:0;font-weight:700}.subtitle{font-size:14px;color:var(--muted);margin-top:4px;line-height:1.4}
 main{max-width:540px;margin:auto;padding:14px}.card{background:var(--card);border-radius:22px;padding:18px;margin:14px 0;box-shadow:0 2px 10px rgba(0,0,0,.04)}
-h2{font-size:22px;margin:0 0 14px;font-weight:900}h3{font-size:18px;margin:18px 0 8px;font-weight:900}
-label{display:block;font-size:15px;font-weight:900;margin:12px 0 6px}
-input,select{width:100%;height:54px;border:1px solid #ddd;border-radius:16px;padding:0 14px;font-size:22px;background:white;font-weight:700}
-input::placeholder{color:#777;font-weight:900}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-button{width:100%;border:0;border-radius:16px;padding:16px;margin-top:12px;background:var(--main);color:white;font-size:18px;font-weight:900}
+h2{font-size:22px;margin:0 0 14px;font-weight:600}h3{font-size:18px;margin:18px 0 8px;font-weight:600}
+label{display:block;font-size:15px;font-weight:600;margin:12px 0 6px}
+input,select{width:100%;height:54px;border:1px solid #ddd;border-radius:16px;padding:0 14px;font-size:22px;background:white;font-weight:500}
+input::placeholder{color:#777;font-weight:600}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+button{width:100%;border:0;border-radius:16px;padding:16px;margin-top:12px;background:var(--main);color:white;font-size:18px;font-weight:600}
 button.dark{background:#333}button.blue{background:var(--blue)}button.light{background:#eee;color:#333}
 .result{background:#fafafa;border:1px solid #eee;border-radius:16px;padding:14px;line-height:1.7;font-size:15px;margin-top:14px}
-.big-status{font-size:24px;font-weight:900;color:var(--main);line-height:1.5}.kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-.box{background:#fafafa;border:1px solid #eee;border-radius:16px;padding:12px}.box .label{font-size:12px;color:var(--muted);font-weight:800}.box .value{font-size:22px;font-weight:900}
+.big-status{font-size:24px;font-weight:600;color:var(--main);line-height:1.5}.kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.box{background:#fafafa;border:1px solid #eee;border-radius:16px;padding:12px}.box .label{font-size:12px;color:var(--muted);font-weight:500}.box .value{font-size:22px;font-weight:600}
 table{width:100%;border-collapse:collapse;font-size:15px}th,td{border-bottom:1px solid #eee;padding:10px 4px;text-align:right}th:first-child,td:first-child{text-align:left}
 .bottom-nav{position:fixed;left:0;right:0;bottom:0;background:white;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding:10px 14px calc(10px + env(safe-area-inset-bottom));z-index:20}
 .bottom-nav button{margin:0;background:var(--main);border-radius:14px;font-size:16px;padding:13px 4px}.section{display:none}.section.active{display:block}
@@ -28,14 +28,14 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{border-bottom:1px
 </style>
 </head>
 <body>
-<header><h1>ポコチャメーター 全国共有ボーダー版</h1><div class="subtitle">全国共有・平均集計・コアボーナス・馬車/花火換算</div></header>
+<header><h1>ポコチャメーター シンプル共有版</h1><div class="subtitle">履歴・平均・コアボーナス・アイテム換算</div></header>
 <main>
 <section id="sec-calc" class="section active">
 <div class="card"><h2>⚡ クイック入力</h2>
 <label>現在pt</label><input id="point" type="number" inputmode="numeric" placeholder="例：4200000">
 <label>エールボーナス加算pt</label><input id="yellBonusPoint" type="number" inputmode="numeric" value="0">
 <div class="grid3"><div><label>±0</label><input id="zero" type="number" inputmode="numeric" value="300000"></div><div><label>+1</label><input id="plus1" type="number" inputmode="numeric" value="600000"></div><div><label>+2</label><input id="plus2" type="number" inputmode="numeric" value="1000000"></div></div>
-<div class="grid2"><div><label>残り分</label><input id="quickMinutes" type="number" inputmode="numeric" placeholder="例：90"></div><div><label>締め時間</label><input id="deadline" type="time" value="23:59"></div></div>
+
 <button onclick="calc()">計算する</button><button class="dark" onclick="copySummary()">結果をコピー</button>
 <div id="dashboard" class="result">まだ計算していません。</div></div>
 </section>
@@ -86,10 +86,10 @@ function loadItems(){return JSON.parse(localStorage.getItem("items")||JSON.strin
 function renderItems(){let items=loadItems();selectedItem.innerHTML="";items.forEach((it,i)=>{let op=document.createElement("option");op.value=i;op.textContent=`${it.name}（${yen(it.coin)}コイン）`;selectedItem.appendChild(op)});itemList.innerHTML=items.map((it,i)=>`<div class="item-row"><span>${it.name}：${yen(it.coin)}コイン</span><button onclick="deleteItem(${i})">削除</button></div>`).join("")}
 function addItem(){let n=newItemName.value.trim(),c=num("newItemCoin");if(!n||c<=0){alert("アイテム名とコイン数を入力してください");return}let items=loadItems();items.push({name:n,coin:c});saveItems(items);newItemName.value="";newItemCoin.value="";renderItems()}
 function deleteItem(i){let items=loadItems();items.splice(i,1);saveItems(items.length?items:defaultItems);renderItems()} function resetItems(){saveItems(defaultItems);renderItems()}
-function getMinutesLeft(){let q=num("quickMinutes");if(q>0)return q;let t=(deadline.value||"23:59").split(":");let now=new Date();let n=now.getHours()*60+now.getMinutes(),e=Number(t[0])*60+Number(t[1]);if(e<n)e+=1440;return Math.max(1,e-n)}
+function getMinutesLeft(){return 60}
 function needCoin(pt,rate){return rate<=0?0:Math.ceil(pt/rate)} function itemCount(c,coin){return c<=0?0:Math.ceil(c/coin)} function meter(p,z,p1,p2){if(p>=p2)return"+2";if(p>=p1)return"+1";if(p>=z)return"±0";return"±0未満"}
 function combo(coins){let items=loadItems(),b=items.find(i=>i.name.includes("馬車"))||items[0],h=items.find(i=>i.name.includes("花火"))||items[0];if(coins<=0)return"到達済み";let best=null;for(let bi=0;bi<=Math.ceil(coins/b.coin)+2;bi++){for(let hi=0;hi<=Math.ceil(coins/h.coin)+5;hi++){let total=bi*b.coin+hi*h.coin;if(total>=coins){let cand={bi,hi,over:total-coins,count:bi+hi};if(!best||cand.over<best.over||(cand.over===best.over&&cand.count<best.count))best=cand}}}return `${b.name}${best.bi}個 + ${h.name}${best.hi}個`}
-function calc(){let raw=num("point"),p=raw+num("yellBonusPoint"),z=num("zero"),p1=num("plus1"),p2=num("plus2"),rate=num("base")*autoCoreBonus(num("coreCount")),min=getMinutesLeft(),hours=min/60,items=loadItems(),sel=items[Number(selectedItem.value)]||items[0];let h=`<div class="big-status">現在：${meter(p,z,p1,p2)}</div><div class="kpi"><div class="box"><div class="label">計算pt</div><div class="value">${yen(p)}</div></div><div class="box"><div class="label">1コイン</div><div class="value">${rate.toFixed(2)}pt</div></div></div>`;[{name:"±0",v:z},{name:"+1",v:p1},{name:"+2",v:p2}].forEach(t=>{let need=Math.max(0,t.v-p),coins=needCoin(need,rate);h+=`<hr style="border:0;border-top:1px solid #eee;margin:14px 0"><strong>${t.name}まで</strong><br>あと ${yen(need)}pt<br>必要コイン：約 ${yen(coins)}<br>${sel.name}：約 ${yen(itemCount(coins,sel.coin))}個<br>組み合わせ：${combo(coins)}<br>必要時速：${yen(need/hours)}pt/h`});dashboard.innerHTML=h;saveInputs()}
+function calc(){let raw=num("point"),p=raw+num("yellBonusPoint"),z=num("zero"),p1=num("plus1"),p2=num("plus2"),rate=num("base")*autoCoreBonus(num("coreCount")),items=loadItems(),sel=items[Number(selectedItem.value)]||items[0];let h=`<div class="big-status">現在：${meter(p,z,p1,p2)}</div><div class="kpi"><div class="box"><div class="label">計算pt</div><div class="value">${yen(p)}</div></div><div class="box"><div class="label">1コイン</div><div class="value">${rate.toFixed(2)}pt</div></div></div>`;[{name:"±0",v:z},{name:"+1",v:p1},{name:"+2",v:p2}].forEach(t=>{let need=Math.max(0,t.v-p),coins=needCoin(need,rate);h+=`<hr style="border:0;border-top:1px solid #eee;margin:14px 0"><strong>${t.name}まで</strong><br>あと ${yen(need)}pt<br>必要コイン：約 ${yen(coins)}<br>${sel.name}：約 ${yen(itemCount(coins,sel.coin))}個<br>組み合わせ：${combo(coins)}`});dashboard.innerHTML=h;saveInputs()}
 function copySummary(){navigator.clipboard.writeText(dashboard.innerText).then(()=>alert("コピーしました"))}
 function loadBorderHistory(){return JSON.parse(localStorage.getItem("borderHistory")||"[]")} function saveBorderHistoryList(l){localStorage.setItem("borderHistory",JSON.stringify(l))}
 function saveBorderHistory(){let row={date:borderDate.value||todayISO(),rank:rank.value,zero:num("histZero"),plus1:num("histPlus1"),plus2:num("histPlus2"),myPoint:num("myFinalPoint")};if(row.zero<=0||row.plus1<=0||row.plus2<=0){alert("±0/+1/+2を入力してください");return}let list=loadBorderHistory().filter(x=>!(x.date===row.date&&x.rank===row.rank));list.push(row);list.sort((a,b)=>b.date.localeCompare(a.date));saveBorderHistoryList(list);renderBorderHistory();alert("保存しました")}
@@ -99,7 +99,7 @@ function predictBorders(){let list=loadBorderHistory().filter(x=>x.rank===rank.v
 function applyPredictedBorders(){if(!predicted)predictBorders();if(!predicted)return;zero.value=predicted.zero;plus1.value=predicted.plus1;plus2.value=predicted.plus2;showSection("calc");calc()}
 function renderBorderHistory(){let list=loadBorderHistory();if(!list.length){borderHistoryArea.innerHTML="<br>履歴はまだありません。";return}let h="<br><table><tr><th>日付</th><th>ランク</th><th>±0</th><th>+1</th><th>+2</th></tr>";list.forEach(x=>h+=`<tr><td>${x.date}</td><td>${x.rank||""}</td><td>${yen(x.zero)}</td><td>${yen(x.plus1)}</td><td>${yen(x.plus2)}</td></tr>`);borderHistoryArea.innerHTML=h+"</table>"}
 function downloadBorderCSV(){let list=loadBorderHistory();if(!list.length){alert("履歴がありません");return}let csv=[["date","rank","zero","plus1","plus2","myPoint"],...list.map(x=>[x.date,x.rank||"",x.zero,x.plus1,x.plus2,x.myPoint||""])].map(r=>r.join(",")).join("\n");let blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});let url=URL.createObjectURL(blob);let a=document.createElement("a");a.href=url;a.download="pococha_border_history.csv";a.click();URL.revokeObjectURL(url)}
-function saveInputs(){let ids=["point","yellBonusPoint","zero","plus1","plus2","quickMinutes","deadline","rank","base","coreCount","selectedItem"];let d={};ids.forEach(id=>{let el=document.getElementById(id);if(el)d[id]=el.value});localStorage.setItem("inputs",JSON.stringify(d))}
+function saveInputs(){let ids=["point","yellBonusPoint","zero","plus1","plus2","rank","base","coreCount","selectedItem"];let d={};ids.forEach(id=>{let el=document.getElementById(id);if(el)d[id]=el.value});localStorage.setItem("inputs",JSON.stringify(d))}
 function loadInputs(){borderDate.value=todayISO();let s=localStorage.getItem("inputs");if(!s){applyRankPreset();return}let d=JSON.parse(s);Object.keys(d).forEach(id=>{let el=document.getElementById(id);if(el)el.value=d[id]})}
 loadInputs();renderItems();renderCoreRules();renderBorderHistory();showCoreBonus();
 </script>
