@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ポコチャメーター ファミリー反映版</title>
+<title>ポコチャメーター ファミリー修正版</title>
 <style>
 :root{
   --main:#ff6b4a;
@@ -275,6 +275,10 @@ textarea{
 .history-mini{font-size:13px;color:var(--muted);line-height:1.6}
 .history-table-wrap{overflow-x:auto;margin-top:8px}
 
+
+.family-status-ok{background:#eafff1;border:1px solid #b7efca;border-radius:14px;padding:10px;margin-top:8px;color:#1f9d55;font-weight:900}
+.family-status-bad{background:#ffe9e7;border:1px solid #ffc8c2;border-radius:14px;padding:10px;margin-top:8px;color:#e74c3c;font-weight:900}
+
 </style>
 
 <link rel="manifest" href="./manifest.json">
@@ -287,7 +291,7 @@ textarea{
 </head>
 <body>
 <header>
-  <h1>ポコチャメーター ファミリー反映版</h1>
+  <h1>ポコチャメーター ファミリー修正版</h1>
   <div class="subtitle">ファミリー内共有に特化 / 直近10日ベースで集計 / 共有・平均集計・コアボーナス・馬車/花火換算</div>
 </header>
 
@@ -2263,6 +2267,152 @@ function showFamilyCorePercent(){
       ボーナス：${Math.round((rate - 1) * 100)}%UP<br>
       1コイン：約 ${point}pt
     </div>`;
+}
+
+
+/* ===== ファミリー共有 修正版：family_meter統一 ===== */
+function familyDocId(){
+  const date = document.getElementById("borderDate")?.value || (typeof defaultBorderDate==="function" ? defaultBorderDate() : todayISO());
+  const rank = document.getElementById("familyRank")?.value || document.getElementById("sharedRank")?.value || "S1";
+  return `${date}_${rank}`;
+}
+
+function familyPayloadFromInputs(){
+  const date = document.getElementById("borderDate")?.value || (typeof defaultBorderDate==="function" ? defaultBorderDate() : todayISO());
+  const rank = document.getElementById("familyRank")?.value || document.getElementById("sharedRank")?.value || "S1";
+  return {
+    date,
+    rank,
+    zero: Number(document.getElementById("histZero")?.value || 0),
+    plus1: Number(document.getElementById("histPlus1")?.value || 0),
+    plus2: Number(document.getElementById("histPlus2")?.value || 0),
+    createdAt: new Date().toISOString(),
+    deviceHash: typeof simpleHash === "function" ? simpleHash(navigator.userAgent + new Date().toDateString()) : String(Date.now())
+  };
+}
+
+function showFamilyStatus(ok, msg){
+  const target = document.getElementById("familyMeterDisplay") || document.getElementById("globalMeterStatus") || document.getElementById("dashboard");
+  if(!target) {
+    alert(msg.replace(/<br>/g, "\n"));
+    return;
+  }
+  const cls = ok ? "family-status-ok" : "family-status-bad";
+  target.innerHTML = `<div class="${cls}">${msg}</div>` + target.innerHTML;
+}
+
+async function publishFamilyMeter(){
+  const payload = familyPayloadFromInputs();
+
+  if(payload.zero <= 0 || payload.plus1 <= 0 || payload.plus2 <= 0){
+    showFamilyStatus(false, "±0 / +1 / +2 を入力してください。");
+    return;
+  }
+
+  if(typeof initFirebase !== "function" || !initFirebase()){
+    showFamilyStatus(false, "Firebaseに接続できません。");
+    return;
+  }
+
+  try{
+    await db.collection("family_meter").doc(`${payload.date}_${payload.rank}`).set(payload);
+    await db.collection("global_meter").doc(`${payload.date}_${payload.rank}`).set(payload);
+
+    if(typeof addLocalFamilyHistory === "function") addLocalFamilyHistory(payload);
+    if(typeof updateFamilyDisplay === "function") updateFamilyDisplay(payload, "ファミリーに共有しました。");
+
+    showFamilyStatus(true, `共有できました！<br>${payload.date} ${payload.rank}<br>±0 ${yen(payload.zero)} / +1 ${yen(payload.plus1)} / +2 ${yen(payload.plus2)}`);
+    alert("ファミリーに共有できました！");
+  }catch(e){
+    console.error(e);
+    showFamilyStatus(false, "共有に失敗しました。Firestoreの接続設定を確認してください。");
+    alert("共有に失敗しました。");
+  }
+}
+
+let fixedFamilyUnsubscribe = null;
+
+function startFamilyMeterSync(){
+  const date = document.getElementById("borderDate")?.value || (typeof defaultBorderDate==="function" ? defaultBorderDate() : todayISO());
+  const rank = document.getElementById("familyRank")?.value || document.getElementById("sharedRank")?.value || "S1";
+  const id = `${date}_${rank}`;
+
+  if(typeof initFirebase !== "function" || !initFirebase()){
+    showFamilyStatus(false, "Firebaseに接続できません。");
+    return;
+  }
+
+  if(fixedFamilyUnsubscribe) fixedFamilyUnsubscribe();
+
+  showFamilyStatus(true, `${date} ${rank} の共有メーターを受信待機中...`);
+
+  fixedFamilyUnsubscribe = db.collection("family_meter").doc(id).onSnapshot(doc => {
+    if(!doc.exists){
+      showFamilyStatus(false, `${date} ${rank} はまだ共有されていません。`);
+      return;
+    }
+
+    const data = doc.data();
+    if(typeof updateFamilyDisplay === "function"){
+      updateFamilyDisplay(data, "リアルタイムで受信しました。");
+    }else{
+      showFamilyStatus(true, `受信しました！<br>${data.date} ${data.rank}<br>±0 ${yen(data.zero)} / +1 ${yen(data.plus1)} / +2 ${yen(data.plus2)}`);
+    }
+
+    if(typeof addLocalFamilyHistory === "function") addLocalFamilyHistory(data);
+  }, e => {
+    console.error(e);
+    showFamilyStatus(false, "受信に失敗しました。");
+  });
+}
+
+function stopFamilyMeterSync(showMessage=true){
+  if(fixedFamilyUnsubscribe){
+    fixedFamilyUnsubscribe();
+    fixedFamilyUnsubscribe = null;
+  }
+  if(showMessage) showFamilyStatus(true, "受け取りを停止しました。");
+}
+
+async function loadFamilyAverageMeter(){
+  const area = document.getElementById("familyAverageDisplay");
+  const rank = document.getElementById("familyRank")?.value || "S1";
+  if(!area) return;
+
+  if(typeof initFirebase !== "function" || !initFirebase()){
+    area.innerHTML = `<div class="main">Firebaseに接続できません</div>`;
+    return;
+  }
+
+  area.innerHTML = `<div class="main">平均を読み込み中...</div>`;
+
+  try{
+    const fromDate = getDateNDaysAgo(9);
+    const snap = await db.collection("family_meter")
+      .where("rank","==",rank)
+      .where("date",">=",fromDate)
+      .get();
+
+    const rows = snap.docs.map(doc=>doc.data());
+    const avg = averageRows(rows);
+
+    if(!avg){
+      area.innerHTML = `<div class="main">投稿データなし</div><div class="sub">${rank} の直近10日共有データがまだありません。</div>`;
+      return;
+    }
+
+    area.innerHTML = `<div class="main">
+      ${rank} 直近10日平均<br>
+      ±0 ${yen(avg.zero)}<br>
+      +1 ${yen(avg.plus1)}<br>
+      +2 ${yen(avg.plus2)}
+    </div>
+    <div class="sub">投稿数：${avg.count}件</div>
+    <button class="dark" onclick="applySharedAverage(${avg.zero},${avg.plus1},${avg.plus2}); calc();">この平均を計算に反映</button>`;
+  }catch(e){
+    console.error(e);
+    area.innerHTML = `<div class="main">平均取得エラー</div><div class="sub">Firestoreのインデックス/接続を確認してください。</div>`;
+  }
 }
 
 renderItems();
