@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ポコチャメーター 縦入力版</title>
+<title>ポコチャメーター リアルタイム縦入力版</title>
 <style>
 :root{--main:#ff6048;--blue:#2f80ed;--bg:#f5f5f5;--card:#fff;--text:#222;--muted:#666;--line:#e8e8e8}
 *{box-sizing:border-box}
@@ -37,10 +37,20 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{border-bottom:1px
 .input-card.plus1 label{color:#2f80ed}
 .input-card.plus2 label{color:#6b4aff}
 
+
+.live-share-card{background:#f7fbff;border:1px solid #cfe7ff;border-radius:18px;padding:14px;margin:14px 0}
+.live-share-card h3{font-size:18px;margin:0 0 8px;font-weight:600}
+.live-meter-box{background:#fff;border:1px solid #eee;border-radius:16px;padding:14px;margin-top:10px}
+.live-meter-box .rank{font-size:14px;color:var(--muted);font-weight:600}
+.live-meter-box .main{font-size:23px;font-weight:600;color:var(--main);line-height:1.6}
+.live-meter-box .sub{font-size:13px;color:var(--muted);line-height:1.6}
+.mode-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mode-row button{margin-top:0}
+
 </style>
 </head>
 <body>
-<header><h1>ポコチャメーター 縦入力版</h1><div class="subtitle">縦入力・履歴・平均・コアボーナス・アイテム換算</div></header>
+<header><h1>ポコチャメーター リアルタイム縦入力版</h1><div class="subtitle">リアルタイム共有・縦入力・履歴・平均・コアボーナス</div></header>
 <main>
 <section id="sec-calc" class="section active">
 <div class="card"><h2>⚡ クイック入力</h2>
@@ -76,6 +86,27 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{border-bottom:1px
 <section id="sec-history" class="section">
 <div class="card"><h2>🧮 前日ボーダー履歴</h2>
 <label>日付</label><input id="borderDate" type="date">
+
+<div class="live-share-card">
+  <h3>📡 ファミリーリアルタイム共有</h3>
+  <small>入力係が「保存してみんなに反映」を押すと、見る側の画面も自動で更新されます。</small>
+
+  <label>更新者名</label>
+  <input id="updaterName" placeholder="例：りょう">
+
+  <div class="mode-row">
+    <button class="blue" onclick="saveAndShareLive()">保存してみんなに反映</button>
+    <button class="dark" onclick="startLiveMeterSync()">見るだけON</button>
+  </div>
+  <button class="light" onclick="stopLiveMeterSync()">見るだけOFF</button>
+
+  <div id="liveMeterBox" class="live-meter-box">
+    <div class="rank">共有メーター</div>
+    <div class="main">まだ受信していません</div>
+    <div class="sub">見るだけONを押すと、入力係の更新を受け取れます。</div>
+  </div>
+</div>
+
 
 <div class="input-stack">
   <div class="input-card zero">
@@ -147,7 +178,7 @@ function predictBorders(){let list=loadBorderHistory().filter(x=>x.rank===rank.v
 function applyPredictedBorders(){if(!predicted)predictBorders();if(!predicted)return;zero.value=predicted.zero;plus1.value=predicted.plus1;plus2.value=predicted.plus2;showSection("calc");calc()}
 function renderBorderHistory(){let list=loadBorderHistory();if(!list.length){borderHistoryArea.innerHTML="<br>履歴はまだありません。";return}let h="<br><table><tr><th>日付</th><th>ランク</th><th>±0</th><th>+1</th><th>+2</th></tr>";list.forEach(x=>h+=`<tr><td>${x.date}</td><td>${x.rank||""}</td><td>${yen(x.zero)}</td><td>${yen(x.plus1)}</td><td>${yen(x.plus2)}</td></tr>`);borderHistoryArea.innerHTML=h+"</table>"}
 function downloadBorderCSV(){let list=loadBorderHistory();if(!list.length){alert("履歴がありません");return}let csv=[["date","rank","zero","plus1","plus2","myPoint"],...list.map(x=>[x.date,x.rank||"",x.zero,x.plus1,x.plus2,x.myPoint||""])].map(r=>r.join(",")).join("\n");let blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});let url=URL.createObjectURL(blob);let a=document.createElement("a");a.href=url;a.download="pococha_border_history.csv";a.click();URL.revokeObjectURL(url)}
-function saveInputs(){let ids=["point","yellBonusPoint","zero","plus1","plus2","rank","base","coreCount","selectedItem"];let d={};ids.forEach(id=>{let el=document.getElementById(id);if(el)d[id]=el.value});localStorage.setItem("inputs",JSON.stringify(d))}
+function saveInputs(){let ids=["point","yellBonusPoint","zero","plus1","plus2","rank","updaterName","base","coreCount","selectedItem"];let d={};ids.forEach(id=>{let el=document.getElementById(id);if(el)d[id]=el.value});localStorage.setItem("inputs",JSON.stringify(d))}
 function loadInputs(){borderDate.value=todayISO();let s=localStorage.getItem("inputs");if(!s){applyRankPreset();return}let d=JSON.parse(s);Object.keys(d).forEach(id=>{let el=document.getElementById(id);if(el)el.value=d[id]})}
 loadInputs();renderItems();renderCoreRules();renderBorderHistory();showCoreBonus();
 </script>
