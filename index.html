@@ -43,6 +43,19 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{border-bottom:1px
 .live-meter-box .sub{font-size:13px;color:var(--muted);line-height:1.6}
 .mode-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .mode-row button{margin-top:0}
+
+.live-values{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
+.live-value{border-radius:14px;padding:10px 12px;font-weight:700;font-size:20px;display:flex;justify-content:space-between;align-items:center}
+.live-value.zero{background:#fff8f2;border:1px solid #ffd0a8;color:#d86b00}
+.live-value.plus1{background:#f5f9ff;border:1px solid #b9d8ff;color:#2f80ed}
+.live-value.plus2{background:#faf7ff;border:1px solid #d6c4ff;color:#6b4aff}
+.live-value span:first-child{font-size:16px}
+.live-value span:last-child{font-size:24px;color:#222}
+.live-meta{font-size:13px;color:var(--muted);line-height:1.7;margin-top:8px}
+
+.history-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.history-scroll table{min-width:560px}
+.shared-note{font-size:13px;color:var(--muted);line-height:1.6;margin-top:8px}
 </style>
 </head>
 <body>
@@ -97,7 +110,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{border-bottom:1px
 <button class="blue" onclick="showCoreBonus()">コアボーナス確認</button><div id="coreBonusResult" class="result"></div>
 <h3>コアボーナス表</h3><div id="coreTableArea"></div></div>
 <div class="card"><h2>🎁 アイテム一覧</h2><label>メイン表示アイテム</label><select id="selectedItem"></select>
-<div class="grid2"><div><label>アイテム名</label><input id="newItemName" placeholder="例：ロケット"></div><div><label>コイン数</label><input id="newItemCoin" type="number" inputmode="numeric"></div></div>
+<div class="grid2"><div><label>アイテム名</label><input id="newItemName" placeholder=""></div><div><label>コイン数</label><input id="newItemCoin" type="number" inputmode="numeric"></div></div>
 <button class="dark" onclick="addItem()">アイテム追加</button><button class="light" onclick="resetItems()">初期アイテムに戻す</button><div id="itemList"></div></div>
 </section>
 </main>
@@ -110,7 +123,7 @@ const firebaseConfig={apiKey:"AIzaSyA2EXZvEI_xeFBNuz40HoN32l6RxGdE518",authDomai
 const defaultItems=[{name:"花火",coin:1080},{name:"馬車",coin:5555},{name:"小馬車",coin:3333},{name:"ロケット",coin:10000}];
 const defaultRankPresets={S1:{zero:300000,plus1:600000,plus2:1000000},S2:{zero:400000,plus1:800000,plus2:1300000},S3:{zero:500000,plus1:1000000,plus2:1600000},S4:{zero:650000,plus1:1300000,plus2:2100000},S5:{zero:800000,plus1:1600000,plus2:2600000},S6:{zero:1000000,plus1:2000000,plus2:3200000}};
 const coreRules=[{min:0,rate:1},{min:2,rate:1.01},{min:5,rate:1.02},{min:10,rate:1.03},{min:15,rate:1.04},{min:20,rate:1.05},{min:25,rate:1.06},{min:30,rate:1.07},{min:35,rate:1.08},{min:40,rate:1.09},{min:45,rate:1.10},{min:50,rate:1.11},{min:60,rate:1.12},{min:70,rate:1.13},{min:80,rate:1.14},{min:90,rate:1.15},{min:100,rate:1.16},{min:150,rate:1.17},{min:200,rate:1.18},{min:250,rate:1.19},{min:300,rate:1.20},{min:400,rate:1.21},{min:500,rate:1.22}];
-let predicted=null, db=null, liveUnsubscribe=null;
+let predicted=null, db=null, liveUnsubscribe=null, historyUnsubscribe=null;
 
 function showSection(n){document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));document.getElementById("sec-"+n).classList.add("active")}
 function num(id){return Number(document.getElementById(id)?.value||0)}
@@ -143,15 +156,24 @@ function copySummary(){navigator.clipboard.writeText(dashboard.innerText).then((
 function loadBorderHistory(){return JSON.parse(localStorage.getItem("borderHistory")||"[]")}
 function saveBorderHistoryList(l){localStorage.setItem("borderHistory",JSON.stringify(l))}
 function saveBorderHistory(){let row={date:borderDate.value||todayISO(),rank:rank.value,zero:num("histZero"),plus1:num("histPlus1"),plus2:num("histPlus2"),myPoint:num("myFinalPoint")};if(row.zero<=0||row.plus1<=0||row.plus2<=0){alert("±0/+1/+2を入力してください");return false}let list=loadBorderHistory().filter(x=>!(x.date===row.date&&x.rank===row.rank));list.push(row);list.sort((a,b)=>b.date.localeCompare(a.date));saveBorderHistoryList(list);renderBorderHistory();return true}
-async function saveAndShare(){if(!saveBorderHistory())return;if(!initFirebase()){alert("端末保存しました。Firebaseは未接続です。");return}let row={date:borderDate.value||todayISO(),rank:rank.value,zero:num("histZero"),plus1:num("histPlus1"),plus2:num("histPlus2"),createdAt:new Date().toISOString()};try{await db.collection("family_meter").doc(`${row.date}_${row.rank}`).set(row);await db.collection("shared_borders").add(row);alert("全国共有にも投稿しました")}catch(e){console.error(e);alert("共有に失敗しました")}}
+async function saveAndShare(){if(!saveBorderHistory())return;if(!initFirebase()){alert("端末保存しました。Firebaseは未接続です。");return}let row={date:borderDate.value||todayISO(),rank:rank.value,zero:num("histZero"),plus1:num("histPlus1"),plus2:num("histPlus2"),updater:updaterName.value.trim()||"未入力",createdAt:new Date().toISOString()};try{await db.collection("family_meter").doc(`${row.date}_${row.rank}`).set(row);await db.collection("shared_borders").doc(`${row.date}_${row.rank}`).set(row);alert("全国共有にも投稿しました")}catch(e){console.error(e);alert("共有に失敗しました。Firebaseルールを確認してください")}}
 
 async function saveAndShareLive(){
   if(!initFirebase()){alert("Firebaseに接続できません");return}
-  const row={date:borderDate.value||todayISO(),rank:rank.value,zero:num("histZero"),plus1:num("histPlus1"),plus2:num("histPlus2"),updater:updaterName.value.trim()||"未入力",updatedAt:new Date().toISOString()};
+  const row={date:borderDate.value||todayISO(),rank:rank.value,zero:num("histZero"),plus1:num("histPlus1"),plus2:num("histPlus2"),updater:updaterName.value.trim()||"未入力",updatedAt:new Date().toISOString(),createdAt:new Date().toISOString()};
   if(row.zero<=0||row.plus1<=0||row.plus2<=0){alert("±0 / +1 / +2 を入力してください");return}
   try{
     await db.collection("family_meter").doc("live").set(row);
-    liveMeterBox.innerHTML=`<div class="rank">共有メーター ${row.rank}</div><div class="main">送信しました</div><div class="sub">更新者：${row.updater}<br>日付：${row.date}<br>±0：${yen(row.zero)} / +1：${yen(row.plus1)} / +2：${yen(row.plus2)}</div>`;
+    await db.collection("family_meter").doc(`${row.date}_${row.rank}`).set(row);
+    await db.collection("shared_borders").doc(`${row.date}_${row.rank}`).set(row);
+
+    let list=loadBorderHistory().filter(x=>!(x.date===row.date&&x.rank===row.rank));
+    list.push(row);
+    list.sort((a,b)=>b.date.localeCompare(a.date));
+    saveBorderHistoryList(list);
+    renderBorderHistory();
+
+    liveMeterBox.innerHTML=`<div class="rank">共有メーター ${row.rank}</div><div class="main">送信しました</div><div class="live-values"><div class="live-value zero"><span>🟧 ±0</span><span>${yen(row.zero)}</span></div><div class="live-value plus1"><span>🟦 +1</span><span>${yen(row.plus1)}</span></div><div class="live-value plus2"><span>🟪 +2</span><span>${yen(row.plus2)}</span></div></div><div class="live-meta">更新者：${row.updater}<br>日付：${row.date}</div>`;
     saveInputs();
     alert("みんなに反映しました");
   }catch(e){console.error(e);alert("送信に失敗しました。Firebaseルールを確認してください")}
@@ -160,7 +182,11 @@ async function saveAndShareLive(){
 function startLiveMeterSync(){
   if(!initFirebase()){alert("Firebaseに接続できません");return}
   if(liveUnsubscribe)liveUnsubscribe();
+  if(historyUnsubscribe)historyUnsubscribe();
+
   liveMeterBox.innerHTML=`<div class="rank">共有メーター</div><div class="main">受信待機中...</div><div class="sub">入力係が更新すると自動で表示されます。</div>`;
+  borderHistoryArea.innerHTML=`<br><div class="result">共有履歴を受信中...</div>`;
+
   liveUnsubscribe=db.collection("family_meter").doc("live").onSnapshot(doc=>{
     if(!doc.exists){
       liveMeterBox.innerHTML=`<div class="rank">共有メーター</div><div class="main">まだ受信していません</div><div class="sub">入力係の更新待ちです。</div>`;
@@ -171,19 +197,41 @@ function startLiveMeterSync(){
     histPlus1.value=d.plus1||"";
     histPlus2.value=d.plus2||"";
     if(d.rank)rank.value=d.rank;
-    liveMeterBox.innerHTML=`<div class="rank">共有メーター ${d.rank||""}</div><div class="main">受信中</div><div class="sub">更新者：${d.updater||"未入力"}<br>日付：${d.date||""}<br>±0：${yen(d.zero)} / +1：${yen(d.plus1)} / +2：${yen(d.plus2)}</div>`;
+    liveMeterBox.innerHTML=`<div class="rank">共有メーター ${d.rank||""}</div><div class="main">受信中</div><div class="live-values"><div class="live-value zero"><span>🟧 ±0</span><span>${yen(d.zero)}</span></div><div class="live-value plus1"><span>🟦 +1</span><span>${yen(d.plus1)}</span></div><div class="live-value plus2"><span>🟪 +2</span><span>${yen(d.plus2)}</span></div></div><div class="live-meta">更新者：${d.updater||"未入力"}<br>日付：${d.date||""}</div>`;
   },e=>{console.error(e);alert("受信に失敗しました。Firebaseルールを確認してください")});
+
+  historyUnsubscribe=db.collection("shared_borders").orderBy("date","desc").limit(60).onSnapshot(snap=>{
+    const list=[];
+    snap.forEach(doc=>list.push(doc.data()));
+    if(list.length){
+      saveBorderHistoryList(list);
+      renderSharedBorderHistory(list);
+    }else{
+      borderHistoryArea.innerHTML=`<br><div class="result">共有履歴はまだありません。</div>`;
+    }
+  },e=>{
+    console.error(e);
+    borderHistoryArea.innerHTML=`<br><div class="result">共有履歴の受信に失敗しました。Firebaseルールを確認してください。</div>`;
+  });
 }
 
 function stopLiveMeterSync(){
   if(liveUnsubscribe){liveUnsubscribe();liveUnsubscribe=null}
+  if(historyUnsubscribe){historyUnsubscribe();historyUnsubscribe=null}
   liveMeterBox.innerHTML=`<div class="rank">共有メーター</div><div class="main">見るだけOFF</div><div class="sub">受信を停止しました。</div>`;
+  renderBorderHistory();
 }
 
 function avg(l,k){let v=l.map(x=>x[k]).filter(v=>v>0);return v.reduce((a,b)=>a+b,0)/(v.length||1)}
 function predictBorders(){let list=loadBorderHistory().filter(x=>x.rank===rank.value).slice(0,10);if(!list.length){borderAnalysis.innerHTML="履歴がありません。";return}predicted={zero:Math.round(avg(list,"zero")),plus1:Math.round(avg(list,"plus1")),plus2:Math.round(avg(list,"plus2"))};borderAnalysis.innerHTML=`<strong>直近${list.length}件平均</strong><br>±0：${yen(predicted.zero)}<br>+1：${yen(predicted.plus1)}<br>+2：${yen(predicted.plus2)}`}
 function applyPredictedBorders(){if(!predicted)predictBorders();if(!predicted)return;zero.value=predicted.zero;plus1.value=predicted.plus1;plus2.value=predicted.plus2;showSection("calc");calc()}
-function renderBorderHistory(){let list=loadBorderHistory();if(!list.length){borderHistoryArea.innerHTML="<br>履歴はまだありません。";return}let h="<br><table><tr><th>日付</th><th>ランク</th><th>±0</th><th>+1</th><th>+2</th></tr>";list.forEach(x=>h+=`<tr><td>${x.date}</td><td>${x.rank||""}</td><td>${yen(x.zero)}</td><td>${yen(x.plus1)}</td><td>${yen(x.plus2)}</td></tr>`);borderHistoryArea.innerHTML=h+"</table>"}
+function makeHistoryTable(list,label){
+  let h=`<br><div class="shared-note">${label||""}</div><div class="history-scroll"><table><tr><th>日付</th><th>ランク</th><th>±0</th><th>+1</th><th>+2</th><th>更新者</th></tr>`;
+  list.forEach(x=>h+=`<tr><td>${x.date}</td><td>${x.rank||""}</td><td>${yen(x.zero)}</td><td>${yen(x.plus1)}</td><td>${yen(x.plus2)}</td><td>${x.updater||""}</td></tr>`);
+  return h+"</table></div>";
+}
+function renderBorderHistory(){let list=loadBorderHistory();if(!list.length){borderHistoryArea.innerHTML="<br>履歴はまだありません。";return}borderHistoryArea.innerHTML=makeHistoryTable(list,"端末に保存されている履歴")}
+function renderSharedBorderHistory(list){borderHistoryArea.innerHTML=makeHistoryTable(list,"みんなで共有中の履歴")}
 function downloadBorderCSV(){let list=loadBorderHistory();if(!list.length){alert("履歴がありません");return}let csv=[["date","rank","zero","plus1","plus2","myPoint"],...list.map(x=>[x.date,x.rank||"",x.zero,x.plus1,x.plus2,x.myPoint||""])].map(r=>r.join(",")).join("\n");let blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});let url=URL.createObjectURL(blob);let a=document.createElement("a");a.href=url;a.download="pococha_border_history.csv";a.click();URL.revokeObjectURL(url)}
 function saveInputs(){let ids=["point","yellBonusPoint","zero","plus1","plus2","rank","updaterName","base","coreCount","selectedItem"];let d={};ids.forEach(id=>{let el=document.getElementById(id);if(el)d[id]=el.value});localStorage.setItem("inputs",JSON.stringify(d))}
 function loadInputs(){borderDate.value=todayISO();let s=localStorage.getItem("inputs");if(!s){applyRankPreset();return}let d=JSON.parse(s);Object.keys(d).forEach(id=>{let el=document.getElementById(id);if(el)el.value=d[id]})}
