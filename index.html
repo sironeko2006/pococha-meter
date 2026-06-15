@@ -56,6 +56,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{border-bottom:1px
 .history-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .history-scroll table{min-width:560px}
 .shared-note{font-size:13px;color:var(--muted);line-height:1.6;margin-top:8px}
+.delete-mini{width:auto;margin:0;padding:8px 10px;font-size:12px;background:#999;border-radius:12px}
 </style>
 </head>
 <body>
@@ -87,7 +88,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{border-bottom:1px
 </div>
 <button class="light" onclick="stopLiveMeterSync()">見るだけOFF</button>
 <div id="liveMeterBox" class="live-meter-box">
-<div class="rank">共有メーター</div><div class="main">まだ受信していません</div><div class="sub">見るだけONを押すと、入力係の更新を受け取れます。</div>
+<div class="rank">共有メーター</div><div class="main">まだ受信していません</div><div class="sub">見るだけONを押すと、共有メーターと共有履歴が自動更新されます。</div>
 </div>
 </div>
 <div class="input-stack">
@@ -153,9 +154,18 @@ function combo(coins){let items=loadItems(),b=items.find(i=>i.name.includes("馬
 function calc(){let raw=num("point"),p=raw+num("yellBonusPoint"),z=num("zero"),p1=num("plus1"),p2=num("plus2"),rate=num("base")*autoCoreBonus(num("coreCount")),items=loadItems(),sel=items[Number(selectedItem.value)]||items[0];let h=`<div class="big-status">現在：${meter(p,z,p1,p2)}</div><div class="kpi"><div class="box"><div class="label">計算pt</div><div class="value">${yen(p)}</div></div><div class="box"><div class="label">1コイン</div><div class="value">${rate.toFixed(2)}pt</div></div></div>`;[{name:"±0",v:z},{name:"+1",v:p1},{name:"+2",v:p2}].forEach(t=>{let need=Math.max(0,t.v-p),coins=needCoin(need,rate);h+=`<hr style="border:0;border-top:1px solid #eee;margin:14px 0"><strong>${t.name}まで</strong><br>あと ${yen(need)}pt<br>必要コイン：約 ${yen(coins)}<br>${sel.name}：約 ${yen(itemCount(coins,sel.coin))}個<br>組み合わせ：${combo(coins)}`});dashboard.innerHTML=h;saveInputs()}
 function copySummary(){navigator.clipboard.writeText(dashboard.innerText).then(()=>alert("コピーしました"))}
 
+function historyKey(x){return `${x.date}_${x.rank||rank.value}`}
+function normalizeHistoryList(list){
+  const map={};
+  list.forEach(x=>{
+    if(!x||!x.date)return;
+    map[historyKey(x)]={...map[historyKey(x)],...x};
+  });
+  return Object.values(map).sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+}
 function loadBorderHistory(){return JSON.parse(localStorage.getItem("borderHistory")||"[]")}
-function saveBorderHistoryList(l){localStorage.setItem("borderHistory",JSON.stringify(l))}
-function saveBorderHistory(){let row={date:borderDate.value||todayISO(),rank:rank.value,zero:num("histZero"),plus1:num("histPlus1"),plus2:num("histPlus2"),myPoint:num("myFinalPoint")};if(row.zero<=0||row.plus1<=0||row.plus2<=0){alert("±0/+1/+2を入力してください");return false}let list=loadBorderHistory().filter(x=>!(x.date===row.date&&x.rank===row.rank));list.push(row);list.sort((a,b)=>b.date.localeCompare(a.date));saveBorderHistoryList(list);renderBorderHistory();return true}
+function saveBorderHistoryList(l){localStorage.setItem("borderHistory",JSON.stringify(normalizeHistoryList(l)))}
+function saveBorderHistory(){let row={date:borderDate.value||todayISO(),rank:rank.value,zero:num("histZero"),plus1:num("histPlus1"),plus2:num("histPlus2"),myPoint:num("myFinalPoint")};if(row.zero<=0||row.plus1<=0||row.plus2<=0){alert("±0/+1/+2を入力してください");return false}let list=loadBorderHistory().filter(x=>historyKey(x)!==historyKey(row));list.push(row);saveBorderHistoryList(list);renderBorderHistory();return true}
 async function saveAndShare(){if(!saveBorderHistory())return;if(!initFirebase()){alert("端末保存しました。Firebaseは未接続です。");return}let row={date:borderDate.value||todayISO(),rank:rank.value,zero:num("histZero"),plus1:num("histPlus1"),plus2:num("histPlus2"),updater:updaterName.value.trim()||"未入力",createdAt:new Date().toISOString()};try{await db.collection("family_meter").doc(`${row.date}_${row.rank}`).set(row);await db.collection("shared_borders").doc(`${row.date}_${row.rank}`).set(row);alert("全国共有にも投稿しました")}catch(e){console.error(e);alert("共有に失敗しました。Firebaseルールを確認してください")}}
 
 async function saveAndShareLive(){
@@ -167,9 +177,8 @@ async function saveAndShareLive(){
     await db.collection("family_meter").doc(`${row.date}_${row.rank}`).set(row);
     await db.collection("shared_borders").doc(`${row.date}_${row.rank}`).set(row);
 
-    let list=loadBorderHistory().filter(x=>!(x.date===row.date&&x.rank===row.rank));
+    let list=loadBorderHistory().filter(x=>historyKey(x)!==historyKey(row));
     list.push(row);
-    list.sort((a,b)=>b.date.localeCompare(a.date));
     saveBorderHistoryList(list);
     renderBorderHistory();
 
@@ -184,7 +193,7 @@ function startLiveMeterSync(){
   if(liveUnsubscribe)liveUnsubscribe();
   if(historyUnsubscribe)historyUnsubscribe();
 
-  liveMeterBox.innerHTML=`<div class="rank">共有メーター</div><div class="main">受信待機中...</div><div class="sub">入力係が更新すると自動で表示されます。</div>`;
+  liveMeterBox.innerHTML=`<div class="rank">共有メーター</div><div class="main">受信待機中...</div><div class="sub">入力係が更新すると、メーターと履歴が自動更新されます。</div>`;
   borderHistoryArea.innerHTML=`<br><div class="result">共有履歴を受信中...</div>`;
 
   liveUnsubscribe=db.collection("family_meter").doc("live").onSnapshot(doc=>{
@@ -203,9 +212,10 @@ function startLiveMeterSync(){
   historyUnsubscribe=db.collection("shared_borders").orderBy("date","desc").limit(60).onSnapshot(snap=>{
     const list=[];
     snap.forEach(doc=>list.push(doc.data()));
-    if(list.length){
-      saveBorderHistoryList(list);
-      renderSharedBorderHistory(list);
+    const cleanList=normalizeHistoryList(list);
+    if(cleanList.length){
+      saveBorderHistoryList(cleanList);
+      renderSharedBorderHistory(cleanList);
     }else{
       borderHistoryArea.innerHTML=`<br><div class="result">共有履歴はまだありません。</div>`;
     }
@@ -225,13 +235,38 @@ function stopLiveMeterSync(){
 function avg(l,k){let v=l.map(x=>x[k]).filter(v=>v>0);return v.reduce((a,b)=>a+b,0)/(v.length||1)}
 function predictBorders(){let list=loadBorderHistory().filter(x=>x.rank===rank.value).slice(0,10);if(!list.length){borderAnalysis.innerHTML="履歴がありません。";return}predicted={zero:Math.round(avg(list,"zero")),plus1:Math.round(avg(list,"plus1")),plus2:Math.round(avg(list,"plus2"))};borderAnalysis.innerHTML=`<strong>直近${list.length}件平均</strong><br>±0：${yen(predicted.zero)}<br>+1：${yen(predicted.plus1)}<br>+2：${yen(predicted.plus2)}`}
 function applyPredictedBorders(){if(!predicted)predictBorders();if(!predicted)return;zero.value=predicted.zero;plus1.value=predicted.plus1;plus2.value=predicted.plus2;showSection("calc");calc()}
-function makeHistoryTable(list,label){
-  let h=`<br><div class="shared-note">${label||""}</div><div class="history-scroll"><table><tr><th>日付</th><th>ランク</th><th>±0</th><th>+1</th><th>+2</th><th>更新者</th></tr>`;
-  list.forEach(x=>h+=`<tr><td>${x.date}</td><td>${x.rank||""}</td><td>${yen(x.zero)}</td><td>${yen(x.plus1)}</td><td>${yen(x.plus2)}</td><td>${x.updater||""}</td></tr>`);
+function makeHistoryTable(list,label,isShared){
+  let h=`<br><div class="shared-note">${label||""}</div><div class="history-scroll"><table><tr><th>日付</th><th>ランク</th><th>±0</th><th>+1</th><th>+2</th><th>更新者</th><th>削除</th></tr>`;
+  list.forEach(x=>{
+    const key=historyKey(x);
+    h+=`<tr><td>${x.date}</td><td>${x.rank||""}</td><td>${yen(x.zero)}</td><td>${yen(x.plus1)}</td><td>${yen(x.plus2)}</td><td>${x.updater||""}</td><td><button class="delete-mini" onclick="${isShared?`deleteSharedHistory('${key}')`:`deleteLocalHistory('${key}')`}">削除</button></td></tr>`;
+  });
   return h+"</table></div>";
 }
-function renderBorderHistory(){let list=loadBorderHistory();if(!list.length){borderHistoryArea.innerHTML="<br>履歴はまだありません。";return}borderHistoryArea.innerHTML=makeHistoryTable(list,"端末に保存されている履歴")}
-function renderSharedBorderHistory(list){borderHistoryArea.innerHTML=makeHistoryTable(list,"みんなで共有中の履歴")}
+function renderBorderHistory(){let list=normalizeHistoryList(loadBorderHistory());if(!list.length){borderHistoryArea.innerHTML=`<br><div class="result">履歴はまだありません。</div>`;return}borderHistoryArea.innerHTML=makeHistoryTable(list,"端末に保存されている履歴",false)}
+function renderSharedBorderHistory(list){borderHistoryArea.innerHTML=makeHistoryTable(normalizeHistoryList(list),"みんなで共有中の履歴",true)}
+
+function deleteLocalHistory(key){
+  if(!confirm("この端末の履歴から削除しますか？"))return;
+  let list=loadBorderHistory().filter(x=>historyKey(x)!==key);
+  saveBorderHistoryList(list);
+  renderBorderHistory();
+}
+function deleteLocalHistoryNoConfirm(key){
+  let list=loadBorderHistory().filter(x=>historyKey(x)!==key);
+  saveBorderHistoryList(list);
+}
+async function deleteSharedHistory(key){
+  if(!confirm("共有履歴から削除しますか？みんなの画面からも消えます。"))return;
+  if(!initFirebase()){alert("Firebaseに接続できません");return}
+  try{
+    await db.collection("shared_borders").doc(key).delete();
+    await db.collection("family_meter").doc(key).delete();
+    deleteLocalHistoryNoConfirm(key);
+    renderBorderHistory();
+    alert("共有履歴から削除しました");
+  }catch(e){console.error(e);alert("削除に失敗しました。Firebaseルールを確認してください")}
+}
 function downloadBorderCSV(){let list=loadBorderHistory();if(!list.length){alert("履歴がありません");return}let csv=[["date","rank","zero","plus1","plus2","myPoint"],...list.map(x=>[x.date,x.rank||"",x.zero,x.plus1,x.plus2,x.myPoint||""])].map(r=>r.join(",")).join("\n");let blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});let url=URL.createObjectURL(blob);let a=document.createElement("a");a.href=url;a.download="pococha_border_history.csv";a.click();URL.revokeObjectURL(url)}
 function saveInputs(){let ids=["point","yellBonusPoint","zero","plus1","plus2","rank","updaterName","base","coreCount","selectedItem"];let d={};ids.forEach(id=>{let el=document.getElementById(id);if(el)d[id]=el.value});localStorage.setItem("inputs",JSON.stringify(d))}
 function loadInputs(){borderDate.value=todayISO();let s=localStorage.getItem("inputs");if(!s){applyRankPreset();return}let d=JSON.parse(s);Object.keys(d).forEach(id=>{let el=document.getElementById(id);if(el)el.value=d[id]})}
