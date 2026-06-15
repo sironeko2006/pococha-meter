@@ -25,7 +25,6 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{border-bottom:1px
 .bottom-nav button{margin:0;background:var(--main);border-radius:14px;font-size:16px;padding:13px 4px}.section{display:none}.section.active{display:block}
 .item-row{display:flex;align-items:center;gap:8px;border-bottom:1px solid #eee;padding:10px 0}.item-row span{flex:1}.item-row button{width:auto;margin:0;padding:8px 12px;font-size:13px;background:#999}
 .notice{background:#fff7f3;border:1px solid #ffd6c8;border-radius:16px;padding:12px;line-height:1.6;color:#555;margin-top:12px}
-
 .input-stack{display:grid;grid-template-columns:1fr;gap:12px;margin-top:8px}
 .input-card{background:#fafafa;border:1px solid #eee;border-radius:18px;padding:12px}
 .input-card label{margin:0 0 7px;font-size:16px}
@@ -36,8 +35,6 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{border-bottom:1px
 .input-card.zero label{color:#d86b00}
 .input-card.plus1 label{color:#2f80ed}
 .input-card.plus2 label{color:#6b4aff}
-
-
 .live-share-card{background:#f7fbff;border:1px solid #cfe7ff;border-radius:18px;padding:14px;margin:14px 0}
 .live-share-card h3{font-size:18px;margin:0 0 8px;font-weight:600}
 .live-meter-box{background:#fff;border:1px solid #eee;border-radius:16px;padding:14px;margin-top:10px}
@@ -46,7 +43,6 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{border-bottom:1px
 .live-meter-box .sub{font-size:13px;color:var(--muted);line-height:1.6}
 .mode-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .mode-row button{margin-top:0}
-
 </style>
 </head>
 <body>
@@ -54,31 +50,13 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{border-bottom:1px
 <main>
 <section id="sec-calc" class="section active">
 <div class="card"><h2>⚡ クイック入力</h2>
-
 <div class="input-stack">
-  <div class="input-card">
-    <label>現在pt</label>
-    <input id="point" type="number" inputmode="numeric" placeholder="例：4200000">
-  </div>
-  <div class="input-card">
-    <label>エールボーナス加算pt</label>
-    <input id="yellBonusPoint" type="number" inputmode="numeric" value="0">
-  </div>
-  <div class="input-card zero">
-    <label>🟧 ±0</label>
-    <input id="zero" type="number" inputmode="numeric" value="300000">
-  </div>
-  <div class="input-card plus1">
-    <label>🟦 +1</label>
-    <input id="plus1" type="number" inputmode="numeric" value="600000">
-  </div>
-  <div class="input-card plus2">
-    <label>🟪 +2</label>
-    <input id="plus2" type="number" inputmode="numeric" value="1000000">
-  </div>
+<div class="input-card"><label>現在pt</label><input id="point" type="number" inputmode="numeric" placeholder="例：4200000"></div>
+<div class="input-card"><label>エールボーナス加算pt</label><input id="yellBonusPoint" type="number" inputmode="numeric" value="0"></div>
+<div class="input-card zero"><label>🟧 ±0</label><input id="zero" type="number" inputmode="numeric" value="300000"></div>
+<div class="input-card plus1"><label>🟦 +1</label><input id="plus1" type="number" inputmode="numeric" value="600000"></div>
+<div class="input-card plus2"><label>🟪 +2</label><input id="plus2" type="number" inputmode="numeric" value="1000000"></div>
 </div>
-
-
 <button onclick="calc()">計算する</button><button class="dark" onclick="copySummary()">結果をコピー</button>
 <div id="dashboard" class="result">まだ計算していません。</div></div>
 </section>
@@ -86,43 +64,24 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{border-bottom:1px
 <section id="sec-history" class="section">
 <div class="card"><h2>🧮 前日ボーダー履歴</h2>
 <label>日付</label><input id="borderDate" type="date">
-
 <div class="live-share-card">
-  <h3>📡 ファミリーリアルタイム共有</h3>
-  <small>入力係が「保存してみんなに反映」を押すと、見る側の画面も自動で更新されます。</small>
-
-  <label>更新者名</label>
-  <input id="updaterName" placeholder="例：りょう">
-
-  <div class="mode-row">
-    <button class="blue" onclick="saveAndShareLive()">保存してみんなに反映</button>
-    <button class="dark" onclick="startLiveMeterSync()">見るだけON</button>
-  </div>
-  <button class="light" onclick="stopLiveMeterSync()">見るだけOFF</button>
-
-  <div id="liveMeterBox" class="live-meter-box">
-    <div class="rank">共有メーター</div>
-    <div class="main">まだ受信していません</div>
-    <div class="sub">見るだけONを押すと、入力係の更新を受け取れます。</div>
-  </div>
+<h3>📡 ファミリーリアルタイム共有</h3>
+<small>入力係が「保存してみんなに反映」を押すと、見る側の画面も自動で更新されます。</small>
+<label>更新者名</label><input id="updaterName" placeholder="例：りょう">
+<div class="mode-row">
+<button class="blue" onclick="saveAndShareLive()">保存してみんなに反映</button>
+<button class="dark" onclick="startLiveMeterSync()">見るだけON</button>
 </div>
-
-
+<button class="light" onclick="stopLiveMeterSync()">見るだけOFF</button>
+<div id="liveMeterBox" class="live-meter-box">
+<div class="rank">共有メーター</div><div class="main">まだ受信していません</div><div class="sub">見るだけONを押すと、入力係の更新を受け取れます。</div>
+</div>
+</div>
 <div class="input-stack">
-  <div class="input-card zero">
-    <label>🟧 ±0</label>
-    <input id="histZero" type="number" inputmode="numeric">
-  </div>
-  <div class="input-card plus1">
-    <label>🟦 +1</label>
-    <input id="histPlus1" type="number" inputmode="numeric">
-  </div>
-  <div class="input-card plus2">
-    <label>🟪 +2</label>
-    <input id="histPlus2" type="number" inputmode="numeric">
-  </div>
+<div class="input-card zero"><label>🟧 ±0</label><input id="histZero" type="number" inputmode="numeric"></div>
+<div class="input-card plus1"><label>🟦 +1</label><input id="histPlus1" type="number" inputmode="numeric"></div>
+<div class="input-card plus2"><label>🟪 +2</label><input id="histPlus2" type="number" inputmode="numeric"></div>
 </div>
-
 <label>自分の最終pt 任意</label><input id="myFinalPoint" type="number" inputmode="numeric">
 <button onclick="saveBorderHistory()">保存</button><button class="blue" onclick="saveAndShare()">保存して全国共有にも投稿</button><button class="blue" onclick="predictBorders()">直近平均を計算</button><button class="dark" onclick="applyPredictedBorders()">平均ボーダーを反映</button><button class="light" onclick="downloadBorderCSV()">CSV出力</button>
 <div class="notice">Firebase設定済みなら、共有データは <strong>family_meter</strong> と <strong>shared_borders</strong> に保存されます。</div>
@@ -151,28 +110,76 @@ const firebaseConfig={apiKey:"AIzaSyA2EXZvEI_xeFBNuz40HoN32l6RxGdE518",authDomai
 const defaultItems=[{name:"花火",coin:1080},{name:"馬車",coin:5555},{name:"小馬車",coin:3333},{name:"ロケット",coin:10000}];
 const defaultRankPresets={S1:{zero:300000,plus1:600000,plus2:1000000},S2:{zero:400000,plus1:800000,plus2:1300000},S3:{zero:500000,plus1:1000000,plus2:1600000},S4:{zero:650000,plus1:1300000,plus2:2100000},S5:{zero:800000,plus1:1600000,plus2:2600000},S6:{zero:1000000,plus1:2000000,plus2:3200000}};
 const coreRules=[{min:0,rate:1},{min:2,rate:1.01},{min:5,rate:1.02},{min:10,rate:1.03},{min:15,rate:1.04},{min:20,rate:1.05},{min:25,rate:1.06},{min:30,rate:1.07},{min:35,rate:1.08},{min:40,rate:1.09},{min:45,rate:1.10},{min:50,rate:1.11},{min:60,rate:1.12},{min:70,rate:1.13},{min:80,rate:1.14},{min:90,rate:1.15},{min:100,rate:1.16},{min:150,rate:1.17},{min:200,rate:1.18},{min:250,rate:1.19},{min:300,rate:1.20},{min:400,rate:1.21},{min:500,rate:1.22}];
-let predicted=null, db=null;
+let predicted=null, db=null, liveUnsubscribe=null;
+
 function showSection(n){document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));document.getElementById("sec-"+n).classList.add("active")}
-function num(id){return Number(document.getElementById(id)?.value||0)} function yen(v){return Math.round(v||0).toLocaleString()} function todayISO(){return new Date().toISOString().slice(0,10)}
+function num(id){return Number(document.getElementById(id)?.value||0)}
+function yen(v){return Math.round(v||0).toLocaleString()}
+function todayISO(){return new Date().toISOString().slice(0,10)}
 function initFirebase(){if(db)return true;if(!window.firebase)return false;try{if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);db=firebase.firestore();return true}catch(e){console.error(e);return false}}
-function loadPresets(){return JSON.parse(localStorage.getItem("rankPresets")||JSON.stringify(defaultRankPresets))} function savePresets(p){localStorage.setItem("rankPresets",JSON.stringify(p))}
+
+function loadPresets(){return JSON.parse(localStorage.getItem("rankPresets")||JSON.stringify(defaultRankPresets))}
+function savePresets(p){localStorage.setItem("rankPresets",JSON.stringify(p))}
 function applyRankPreset(){let p=loadPresets()[rank.value];if(!p)return;zero.value=p.zero;plus1.value=p.plus1;plus2.value=p.plus2}
 function saveRankPreset(){let p=loadPresets();p[rank.value]={zero:num("zero"),plus1:num("plus1"),plus2:num("plus2")};savePresets(p);alert(rank.value+"に保存しました")}
 function autoCoreBonus(c){let r=1;coreRules.forEach(x=>{if(c>=x.min)r=x.rate});return r}
 function renderCoreRules(){let h="<table><tr><th>人数</th><th>倍率</th><th>表記</th></tr>";coreRules.forEach(r=>h+=`<tr><td>${r.min}人以上</td><td>${Math.round(r.rate*100)}%</td><td>${Math.round((r.rate-1)*100)}%UP</td></tr>`);coreTableArea.innerHTML=h+"</table>"}
 function showCoreBonus(){let c=num("coreCount"),b=num("base"),r=autoCoreBonus(c);coreBonusResult.innerHTML=`コア人数：<strong>${c}人</strong><br>ボーナス：<strong>${Math.round(r*100)}%</strong>（${Math.round((r-1)*100)}%UP）<br>1コイン換算：約 <strong>${(b*r).toFixed(2)}pt</strong>`}
-function loadItems(){return JSON.parse(localStorage.getItem("items")||JSON.stringify(defaultItems))} function saveItems(i){localStorage.setItem("items",JSON.stringify(i))}
+
+function loadItems(){return JSON.parse(localStorage.getItem("items")||JSON.stringify(defaultItems))}
+function saveItems(i){localStorage.setItem("items",JSON.stringify(i))}
 function renderItems(){let items=loadItems();selectedItem.innerHTML="";items.forEach((it,i)=>{let op=document.createElement("option");op.value=i;op.textContent=`${it.name}（${yen(it.coin)}コイン）`;selectedItem.appendChild(op)});itemList.innerHTML=items.map((it,i)=>`<div class="item-row"><span>${it.name}：${yen(it.coin)}コイン</span><button onclick="deleteItem(${i})">削除</button></div>`).join("")}
 function addItem(){let n=newItemName.value.trim(),c=num("newItemCoin");if(!n||c<=0){alert("アイテム名とコイン数を入力してください");return}let items=loadItems();items.push({name:n,coin:c});saveItems(items);newItemName.value="";newItemCoin.value="";renderItems()}
-function deleteItem(i){let items=loadItems();items.splice(i,1);saveItems(items.length?items:defaultItems);renderItems()} function resetItems(){saveItems(defaultItems);renderItems()}
-function getMinutesLeft(){return 60}
-function needCoin(pt,rate){return rate<=0?0:Math.ceil(pt/rate)} function itemCount(c,coin){return c<=0?0:Math.ceil(c/coin)} function meter(p,z,p1,p2){if(p>=p2)return"+2";if(p>=p1)return"+1";if(p>=z)return"±0";return"±0未満"}
+function deleteItem(i){let items=loadItems();items.splice(i,1);saveItems(items.length?items:defaultItems);renderItems()}
+function resetItems(){saveItems(defaultItems);renderItems()}
+
+function needCoin(pt,rate){return rate<=0?0:Math.ceil(pt/rate)}
+function itemCount(c,coin){return c<=0?0:Math.ceil(c/coin)}
+function meter(p,z,p1,p2){if(p>=p2)return"+2";if(p>=p1)return"+1";if(p>=z)return"±0";return"±0未満"}
 function combo(coins){let items=loadItems(),b=items.find(i=>i.name.includes("馬車"))||items[0],h=items.find(i=>i.name.includes("花火"))||items[0];if(coins<=0)return"到達済み";let best=null;for(let bi=0;bi<=Math.ceil(coins/b.coin)+2;bi++){for(let hi=0;hi<=Math.ceil(coins/h.coin)+5;hi++){let total=bi*b.coin+hi*h.coin;if(total>=coins){let cand={bi,hi,over:total-coins,count:bi+hi};if(!best||cand.over<best.over||(cand.over===best.over&&cand.count<best.count))best=cand}}}return `${b.name}${best.bi}個 + ${h.name}${best.hi}個`}
 function calc(){let raw=num("point"),p=raw+num("yellBonusPoint"),z=num("zero"),p1=num("plus1"),p2=num("plus2"),rate=num("base")*autoCoreBonus(num("coreCount")),items=loadItems(),sel=items[Number(selectedItem.value)]||items[0];let h=`<div class="big-status">現在：${meter(p,z,p1,p2)}</div><div class="kpi"><div class="box"><div class="label">計算pt</div><div class="value">${yen(p)}</div></div><div class="box"><div class="label">1コイン</div><div class="value">${rate.toFixed(2)}pt</div></div></div>`;[{name:"±0",v:z},{name:"+1",v:p1},{name:"+2",v:p2}].forEach(t=>{let need=Math.max(0,t.v-p),coins=needCoin(need,rate);h+=`<hr style="border:0;border-top:1px solid #eee;margin:14px 0"><strong>${t.name}まで</strong><br>あと ${yen(need)}pt<br>必要コイン：約 ${yen(coins)}<br>${sel.name}：約 ${yen(itemCount(coins,sel.coin))}個<br>組み合わせ：${combo(coins)}`});dashboard.innerHTML=h;saveInputs()}
 function copySummary(){navigator.clipboard.writeText(dashboard.innerText).then(()=>alert("コピーしました"))}
-function loadBorderHistory(){return JSON.parse(localStorage.getItem("borderHistory")||"[]")} function saveBorderHistoryList(l){localStorage.setItem("borderHistory",JSON.stringify(l))}
-function saveBorderHistory(){let row={date:borderDate.value||todayISO(),rank:rank.value,zero:num("histZero"),plus1:num("histPlus1"),plus2:num("histPlus2"),myPoint:num("myFinalPoint")};if(row.zero<=0||row.plus1<=0||row.plus2<=0){alert("±0/+1/+2を入力してください");return}let list=loadBorderHistory().filter(x=>!(x.date===row.date&&x.rank===row.rank));list.push(row);list.sort((a,b)=>b.date.localeCompare(a.date));saveBorderHistoryList(list);renderBorderHistory();alert("保存しました")}
-async function saveAndShare(){saveBorderHistory();if(!initFirebase()){alert("端末保存しました。Firebaseは未接続です。");return}let row={date:borderDate.value||todayISO(),rank:rank.value,zero:num("histZero"),plus1:num("histPlus1"),plus2:num("histPlus2"),createdAt:new Date().toISOString()};try{await db.collection("family_meter").doc(`${row.date}_${row.rank}`).set(row);await db.collection("shared_borders").add(row);alert("全国共有にも投稿しました")}catch(e){console.error(e);alert("共有に失敗しました")}}
+
+function loadBorderHistory(){return JSON.parse(localStorage.getItem("borderHistory")||"[]")}
+function saveBorderHistoryList(l){localStorage.setItem("borderHistory",JSON.stringify(l))}
+function saveBorderHistory(){let row={date:borderDate.value||todayISO(),rank:rank.value,zero:num("histZero"),plus1:num("histPlus1"),plus2:num("histPlus2"),myPoint:num("myFinalPoint")};if(row.zero<=0||row.plus1<=0||row.plus2<=0){alert("±0/+1/+2を入力してください");return false}let list=loadBorderHistory().filter(x=>!(x.date===row.date&&x.rank===row.rank));list.push(row);list.sort((a,b)=>b.date.localeCompare(a.date));saveBorderHistoryList(list);renderBorderHistory();return true}
+async function saveAndShare(){if(!saveBorderHistory())return;if(!initFirebase()){alert("端末保存しました。Firebaseは未接続です。");return}let row={date:borderDate.value||todayISO(),rank:rank.value,zero:num("histZero"),plus1:num("histPlus1"),plus2:num("histPlus2"),createdAt:new Date().toISOString()};try{await db.collection("family_meter").doc(`${row.date}_${row.rank}`).set(row);await db.collection("shared_borders").add(row);alert("全国共有にも投稿しました")}catch(e){console.error(e);alert("共有に失敗しました")}}
+
+async function saveAndShareLive(){
+  if(!initFirebase()){alert("Firebaseに接続できません");return}
+  const row={date:borderDate.value||todayISO(),rank:rank.value,zero:num("histZero"),plus1:num("histPlus1"),plus2:num("histPlus2"),updater:updaterName.value.trim()||"未入力",updatedAt:new Date().toISOString()};
+  if(row.zero<=0||row.plus1<=0||row.plus2<=0){alert("±0 / +1 / +2 を入力してください");return}
+  try{
+    await db.collection("family_meter").doc("live").set(row);
+    liveMeterBox.innerHTML=`<div class="rank">共有メーター ${row.rank}</div><div class="main">送信しました</div><div class="sub">更新者：${row.updater}<br>日付：${row.date}<br>±0：${yen(row.zero)} / +1：${yen(row.plus1)} / +2：${yen(row.plus2)}</div>`;
+    saveInputs();
+    alert("みんなに反映しました");
+  }catch(e){console.error(e);alert("送信に失敗しました。Firebaseルールを確認してください")}
+}
+
+function startLiveMeterSync(){
+  if(!initFirebase()){alert("Firebaseに接続できません");return}
+  if(liveUnsubscribe)liveUnsubscribe();
+  liveMeterBox.innerHTML=`<div class="rank">共有メーター</div><div class="main">受信待機中...</div><div class="sub">入力係が更新すると自動で表示されます。</div>`;
+  liveUnsubscribe=db.collection("family_meter").doc("live").onSnapshot(doc=>{
+    if(!doc.exists){
+      liveMeterBox.innerHTML=`<div class="rank">共有メーター</div><div class="main">まだ受信していません</div><div class="sub">入力係の更新待ちです。</div>`;
+      return;
+    }
+    const d=doc.data();
+    histZero.value=d.zero||"";
+    histPlus1.value=d.plus1||"";
+    histPlus2.value=d.plus2||"";
+    if(d.rank)rank.value=d.rank;
+    liveMeterBox.innerHTML=`<div class="rank">共有メーター ${d.rank||""}</div><div class="main">受信中</div><div class="sub">更新者：${d.updater||"未入力"}<br>日付：${d.date||""}<br>±0：${yen(d.zero)} / +1：${yen(d.plus1)} / +2：${yen(d.plus2)}</div>`;
+  },e=>{console.error(e);alert("受信に失敗しました。Firebaseルールを確認してください")});
+}
+
+function stopLiveMeterSync(){
+  if(liveUnsubscribe){liveUnsubscribe();liveUnsubscribe=null}
+  liveMeterBox.innerHTML=`<div class="rank">共有メーター</div><div class="main">見るだけOFF</div><div class="sub">受信を停止しました。</div>`;
+}
+
 function avg(l,k){let v=l.map(x=>x[k]).filter(v=>v>0);return v.reduce((a,b)=>a+b,0)/(v.length||1)}
 function predictBorders(){let list=loadBorderHistory().filter(x=>x.rank===rank.value).slice(0,10);if(!list.length){borderAnalysis.innerHTML="履歴がありません。";return}predicted={zero:Math.round(avg(list,"zero")),plus1:Math.round(avg(list,"plus1")),plus2:Math.round(avg(list,"plus2"))};borderAnalysis.innerHTML=`<strong>直近${list.length}件平均</strong><br>±0：${yen(predicted.zero)}<br>+1：${yen(predicted.plus1)}<br>+2：${yen(predicted.plus2)}`}
 function applyPredictedBorders(){if(!predicted)predictBorders();if(!predicted)return;zero.value=predicted.zero;plus1.value=predicted.plus1;plus2.value=predicted.plus2;showSection("calc");calc()}
@@ -180,6 +187,12 @@ function renderBorderHistory(){let list=loadBorderHistory();if(!list.length){bor
 function downloadBorderCSV(){let list=loadBorderHistory();if(!list.length){alert("履歴がありません");return}let csv=[["date","rank","zero","plus1","plus2","myPoint"],...list.map(x=>[x.date,x.rank||"",x.zero,x.plus1,x.plus2,x.myPoint||""])].map(r=>r.join(",")).join("\n");let blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});let url=URL.createObjectURL(blob);let a=document.createElement("a");a.href=url;a.download="pococha_border_history.csv";a.click();URL.revokeObjectURL(url)}
 function saveInputs(){let ids=["point","yellBonusPoint","zero","plus1","plus2","rank","updaterName","base","coreCount","selectedItem"];let d={};ids.forEach(id=>{let el=document.getElementById(id);if(el)d[id]=el.value});localStorage.setItem("inputs",JSON.stringify(d))}
 function loadInputs(){borderDate.value=todayISO();let s=localStorage.getItem("inputs");if(!s){applyRankPreset();return}let d=JSON.parse(s);Object.keys(d).forEach(id=>{let el=document.getElementById(id);if(el)el.value=d[id]})}
-loadInputs();renderItems();renderCoreRules();renderBorderHistory();showCoreBonus();
+
+loadInputs();
+renderItems();
+renderCoreRules();
+renderBorderHistory();
+showCoreBonus();
 </script>
-</body></html>
+</body>
+</html>
