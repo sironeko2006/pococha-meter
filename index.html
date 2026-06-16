@@ -67,6 +67,15 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{border-bottom:1px
 .history-updater{margin-top:10px;font-size:13px;color:#666}
 .history-delete{text-align:right}
 .delete-mini{width:auto;margin-top:10px;padding:10px 16px;font-size:14px;background:#999;border-radius:999px}
+
+.target-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
+.target-btn{width:100%;border:0;border-radius:14px;padding:14px 6px;margin:0;font-size:18px;font-weight:800;color:#fff}
+.target-zero{background:#ff9f43}
+.target-plus1{background:#2f80ed}
+.target-plus2{background:#8b5cf6}
+.target-btn.active{transform:scale(1.04);box-shadow:0 4px 12px rgba(0,0,0,.18);outline:3px solid rgba(255,96,72,.18)}
+.target-result{background:#fff7f3;border:1px solid #ffd0a8;border-radius:16px;padding:14px;line-height:1.7;font-size:16px;margin-top:12px}
+.target-result strong{font-size:20px;color:var(--main)}
 </style>
 </head>
 <body>
@@ -77,6 +86,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{border-bottom:1px
 <div class="input-stack">
 <div class="input-card"><label>現在pt</label><input id="point" type="number" inputmode="numeric" placeholder="例：4200000"></div>
 <div class="input-card"><label>エールボーナス加算pt</label><input id="yellBonusPoint" type="number" inputmode="numeric" value="0"></div>
+<div class="input-card"><label>🎯 目標メーター</label><div class="target-row"><button type="button" class="target-btn target-zero active" onclick="setTarget('zero',this)">±0</button><button type="button" class="target-btn target-plus1" onclick="setTarget('plus1',this)">+1</button><button type="button" class="target-btn target-plus2" onclick="setTarget('plus2',this)">+2</button></div><input id="targetMeter" type="hidden" value="zero"></div>
 <div class="input-card zero"><label>🟧 ±0</label><input id="zero" type="number" inputmode="numeric" value="300000"></div>
 <div class="input-card plus1"><label>🟦 +1</label><input id="plus1" type="number" inputmode="numeric" value="600000"></div>
 <div class="input-card plus2"><label>🟪 +2</label><input id="plus2" type="number" inputmode="numeric" value="1000000"></div>
@@ -145,8 +155,11 @@ function needCoin(pt,rate){return rate<=0?0:Math.ceil(pt/rate)}
 function itemCount(c,coin){return c<=0?0:Math.ceil(c/coin)}
 function meter(p,z,p1,p2){if(p>=p2)return"+2";if(p>=p1)return"+1";if(p>=z)return"±0";return"±0未満"}
 function combo(coins){let items=loadItems(),b=items.find(i=>i.name.includes("馬車"))||items[0],h=items.find(i=>i.name.includes("花火"))||items[0];if(coins<=0)return"到達済み";let best=null;for(let bi=0;bi<=Math.ceil(coins/b.coin)+2;bi++){for(let hi=0;hi<=Math.ceil(coins/h.coin)+5;hi++){let total=bi*b.coin+hi*h.coin;if(total>=coins){let cand={bi,hi,over:total-coins,count:bi+hi};if(!best||cand.over<best.over||(cand.over===best.over&&cand.count<best.count))best=cand}}}return `${b.name}${best.bi}個 + ${h.name}${best.hi}個`}
-function calc(){let raw=num("point"),p=raw+num("yellBonusPoint"),z=num("zero"),p1=num("plus1"),p2=num("plus2"),rate=num("base")*autoCoreBonus(num("coreCount")),items=loadItems(),sel=items[Number(selectedItem.value)]||items[0];let h=`<div class="big-status">現在：${meter(p,z,p1,p2)}</div><div class="kpi"><div class="box"><div class="label">計算pt</div><div class="value">${yen(p)}</div></div><div class="box"><div class="label">1コイン</div><div class="value">${rate.toFixed(2)}pt</div></div></div>`;[{name:"±0",v:z},{name:"+1",v:p1},{name:"+2",v:p2}].forEach(t=>{let need=Math.max(0,t.v-p),coins=needCoin(need,rate);h+=`<hr style="border:0;border-top:1px solid #eee;margin:14px 0"><strong>${t.name}まで</strong><br>あと ${yen(need)}pt<br>必要コイン：約 ${yen(coins)}<br>${sel.name}：約 ${yen(itemCount(coins,sel.coin))}個<br>組み合わせ：${combo(coins)}`});dashboard.innerHTML=h;saveInputs()}
+function calc(){let raw=num("point"),p=raw+num("yellBonusPoint"),z=num("zero"),p1=num("plus1"),p2=num("plus2"),rate=num("base")*autoCoreBonus(num("coreCount")),items=loadItems(),sel=items[Number(selectedItem.value)]||items[0];let target=document.getElementById("targetMeter")?.value||"zero";let targetValue=target==="zero"?z:target==="plus1"?p1:p2;let targetName=target==="zero"?"±0":target==="plus1"?"+1":"+2";let targetIcon=target==="zero"?"🟧":target==="plus1"?"🟦":"🟪";let remain=Math.max(0,targetValue-p);let targetCoins=needCoin(remain,rate);let h=`<div class="big-status">現在：${meter(p,z,p1,p2)}</div><div class="target-result">🎯 目標：<strong>${targetIcon} ${targetName}</strong><br>残り：<strong>${yen(remain)} pt</strong><br>必要コイン：約 <strong>${yen(targetCoins)}</strong><br>${sel.name}：約 <strong>${yen(itemCount(targetCoins,sel.coin))}個</strong><br>組み合わせ：${combo(targetCoins)}</div><div class="kpi"><div class="box"><div class="label">計算pt</div><div class="value">${yen(p)}</div></div><div class="box"><div class="label">1コイン</div><div class="value">${rate.toFixed(2)}pt</div></div></div>`;[{name:"±0",v:z},{name:"+1",v:p1},{name:"+2",v:p2}].forEach(t=>{let need=Math.max(0,t.v-p),coins=needCoin(need,rate);h+=`<hr style="border:0;border-top:1px solid #eee;margin:14px 0"><strong>${t.name}まで</strong><br>あと ${yen(need)}pt<br>必要コイン：約 ${yen(coins)}<br>${sel.name}：約 ${yen(itemCount(coins,sel.coin))}個<br>組み合わせ：${combo(coins)}`});dashboard.innerHTML=h;saveInputs()}
 function copySummary(){navigator.clipboard.writeText(dashboard.innerText).then(()=>alert("コピーしました"))}
+function setTarget(target,btn){document.getElementById("targetMeter").value=target;document.querySelectorAll(".target-btn").forEach(b=>b.classList.remove("active"));if(btn)btn.classList.add("active");saveInputs();}
+function restoreTargetButton(){let t=document.getElementById("targetMeter")?.value||"zero";document.querySelectorAll(".target-btn").forEach(b=>b.classList.remove("active"));let btn=document.querySelector(`.target-${t}`);if(btn)btn.classList.add("active");}
+
 function historyKey(x){return `${x.date}_${x.rank||rank.value}`}
 function normalizeHistoryList(list){const map={};list.forEach(x=>{if(!x||!x.date)return;map[historyKey(x)]={...map[historyKey(x)],...x};});return Object.values(map).sort((a,b)=>(b.date||"").localeCompare(a.date||""));}
 function loadBorderHistory(){return JSON.parse(localStorage.getItem("borderHistory")||"[]")}
@@ -167,9 +180,9 @@ function deleteLocalHistory(key){if(!confirm("この端末の履歴から削除�
 function deleteLocalHistoryNoConfirm(key){let list=loadBorderHistory().filter(x=>historyKey(x)!==key);saveBorderHistoryList(list);}
 async function deleteSharedHistory(key){if(!confirm("共有履歴から削除しますか？みんなの画面からも消えます。"))return;if(!initFirebase()){alert("Firebaseに接続できません");return}try{await db.collection("shared_borders").doc(key).delete();await db.collection("family_meter").doc(key).delete();deleteLocalHistoryNoConfirm(key);renderBorderHistory();alert("共有履歴から削除しました");}catch(e){console.error(e);alert("削除に失敗しました。Firebaseルールを確認してください")}}
 function downloadBorderCSV(){let list=loadBorderHistory();if(!list.length){alert("履歴がありません");return}let csv=[["date","rank","zero","plus1","plus2","myPoint"],...list.map(x=>[x.date,x.rank||"",x.zero,x.plus1,x.plus2,x.myPoint||""])].map(r=>r.join(",")).join("\n");let blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});let url=URL.createObjectURL(blob);let a=document.createElement("a");a.href=url;a.download="pococha_border_history.csv";a.click();URL.revokeObjectURL(url)}
-function saveInputs(){let ids=["point","yellBonusPoint","zero","plus1","plus2","rank","updaterName","base","coreCount","selectedItem"];let d={};ids.forEach(id=>{let el=document.getElementById(id);if(el)d[id]=el.value});localStorage.setItem("inputs",JSON.stringify(d))}
+function saveInputs(){let ids=["point","yellBonusPoint","zero","plus1","plus2","rank","updaterName","base","coreCount","selectedItem","targetMeter"];let d={};ids.forEach(id=>{let el=document.getElementById(id);if(el)d[id]=el.value});localStorage.setItem("inputs",JSON.stringify(d))}
 function loadInputs(){borderDate.value=todayISO();let s=localStorage.getItem("inputs");if(!s){applyRankPreset();return}let d=JSON.parse(s);Object.keys(d).forEach(id=>{let el=document.getElementById(id);if(el)el.value=d[id]})}
-loadInputs();renderItems();renderCoreRules();renderBorderHistory();showCoreBonus();
+loadInputs();renderItems();restoreTargetButton();renderCoreRules();renderBorderHistory();showCoreBonus();
 </script>
 </body>
 </html>
