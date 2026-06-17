@@ -70,15 +70,12 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{border-bottom:1px
 
 
 .target-meter-title{
-  background:linear-gradient(135deg,#fff8f2,#fff);
-  border:2px solid #ffb36b;
-  border-radius:18px;
+  font-size:16px;
+  font-weight:700;
   text-align:center;
-  padding:14px;
-  margin:10px 0;
-  font-size:24px;
-  font-weight:900;
-  color:#d86b00;
+  margin:6px 0;
+  color:#ff6048;
+  letter-spacing:1px;
 }
 </style>
 </head>
@@ -90,11 +87,12 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{border-bottom:1px
 <div class="input-stack">
 <div class="input-card"><label>現在pt</label><input id="point" type="number" inputmode="numeric" placeholder="例：4200000"></div>
 <div class="input-card"><label>エールボーナス加算pt</label><input id="yellBonusPoint" type="number" inputmode="numeric" value="0"></div>
+
+<div class="target-meter-title">🎯 目標メーター</div>
 <div class="input-card zero"><label>🟧 ±0</label><input id="zero" type="number" inputmode="numeric" value="300000"></div>
 <div class="input-card plus1"><label>🟦 +1</label><input id="plus1" type="number" inputmode="numeric" value="600000"></div>
 <div class="input-card plus2"><label>🟪 +2</label><input id="plus2" type="number" inputmode="numeric" value="1000000"></div>
 </div>
-<div class="target-meter-title">🎯 目標メーター</div>
 <button onclick="calc()">計算する</button><button class="dark" onclick="copySummary()">結果をコピー</button>
 <div id="dashboard" class="result">まだ計算していません。</div></div>
 </section>
