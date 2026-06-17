@@ -131,7 +131,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{border-bottom:1px
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 const firebaseConfig={apiKey:"AIzaSyA2EXZvEI_xeFBNuz40HoN32l6RxGdE518",authDomain:"pocochameter.firebaseapp.com",projectId:"pocochameter",storageBucket:"pocochameter.firebasestorage.app",messagingSenderId:"698530879419",appId:"1:698530879419:web:601abd54ddd0303510969e",measurementId:"G-6QBYFB8Y2B"};
-const defaultItems=[{name:"花火",coin:1080},{name:"馬車",coin:5555},{name:"小馬車",coin:3333},{name:"ロケット",coin:10000}];
+const defaultItems=[{name:"花火",coin:1080},{name:"馬車",coin:5555}];
 const defaultRankPresets={S1:{zero:300000,plus1:600000,plus2:1000000},S2:{zero:400000,plus1:800000,plus2:1300000},S3:{zero:500000,plus1:1000000,plus2:1600000},S4:{zero:650000,plus1:1300000,plus2:2100000},S5:{zero:800000,plus1:1600000,plus2:2600000},S6:{zero:1000000,plus1:2000000,plus2:3200000}};
 const coreRules=[{min:0,rate:1},{min:2,rate:1.01},{min:5,rate:1.02},{min:10,rate:1.03},{min:15,rate:1.04},{min:20,rate:1.05},{min:25,rate:1.06},{min:30,rate:1.07},{min:35,rate:1.08},{min:40,rate:1.09},{min:45,rate:1.10},{min:50,rate:1.11},{min:60,rate:1.12},{min:70,rate:1.13},{min:80,rate:1.14},{min:90,rate:1.15},{min:100,rate:1.16},{min:150,rate:1.17},{min:200,rate:1.18},{min:250,rate:1.19},{min:300,rate:1.20},{min:400,rate:1.21},{min:500,rate:1.22}];
 let predicted=null, db=null, liveUnsubscribe=null, historyUnsubscribe=null;
@@ -147,7 +147,13 @@ function saveRankPreset(){let p=loadPresets();p[rank.value]={zero:num("zero"),pl
 function autoCoreBonus(c){let r=1;coreRules.forEach(x=>{if(c>=x.min)r=x.rate});return r}
 function renderCoreRules(){let h="<table><tr><th>人数</th><th>倍率</th><th>表記</th></tr>";coreRules.forEach(r=>h+=`<tr><td>${r.min}人以上</td><td>${Math.round(r.rate*100)}%</td><td>${Math.round((r.rate-1)*100)}%UP</td></tr>`);coreTableArea.innerHTML=h+"</table>"}
 function showCoreBonus(){let c=num("coreCount"),b=num("base"),r=autoCoreBonus(c);coreBonusResult.innerHTML=`コア人数：<strong>${c}人</strong><br>ボーナス：<strong>${Math.round(r*100)}%</strong>（${Math.round((r-1)*100)}%UP）<br>1コイン換算：約 <strong>${(b*r).toFixed(2)}pt</strong>`}
-function loadItems(){return JSON.parse(localStorage.getItem("items")||JSON.stringify(defaultItems))}
+function loadItems(){
+  let items=JSON.parse(localStorage.getItem("items")||JSON.stringify(defaultItems));
+  items=items.filter(it=>it.name!=="小馬車"&&it.name!=="ロケット");
+  if(!items.length)items=[...defaultItems];
+  localStorage.setItem("items",JSON.stringify(items));
+  return items;
+}
 function saveItems(i){localStorage.setItem("items",JSON.stringify(i))}
 function renderItems(){let items=loadItems();selectedItem.innerHTML="";items.forEach((it,i)=>{let op=document.createElement("option");op.value=i;op.textContent=`${it.name}（${yen(it.coin)}コイン）`;selectedItem.appendChild(op)});itemList.innerHTML=items.map((it,i)=>`<div class="item-row"><span>${it.name}：${yen(it.coin)}コイン</span><button onclick="deleteItem(${i})">削除</button></div>`).join("")}
 function addItem(){let n=newItemName.value.trim(),c=num("newItemCoin");if(!n||c<=0){alert("アイテム名とコイン数を入力してください");return}let items=loadItems();items.push({name:n,coin:c});saveItems(items);newItemName.value="";newItemCoin.value="";renderItems()}
